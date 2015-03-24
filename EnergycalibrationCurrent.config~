@@ -1,0 +1,22 @@
+# configuration file for  EnergiekalibrationStrom.C
+#number of files
+8
+#name beginning of output files
+20150318_M0307-Trim40-
+#Input Files	
+Ag
+20150317-Rate-Gauss-Ag.txt
+Cu
+20150317-Rate-Gauss-Cu.txt
+Fe
+20150317-Rate-Gauss-Fe.txt
+In
+20150317-Rate-Gauss-In.txt
+Mo
+20150317-Rate-Gauss-Mo.txt
+Nd
+20150317-Rate-Gauss-Nd.txt
+Sn
+20150317-Rate-Gauss-Sn.txt
+Zn
+20150317-Rate-Gauss-Zn.txt

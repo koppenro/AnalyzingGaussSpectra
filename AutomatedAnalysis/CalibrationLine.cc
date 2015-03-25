@@ -16,6 +16,8 @@ using namespace std;
 
 void PlotGraph(bool linearfit = true, bool plotlegend = true, bool verbose = true){
 
+//Read in
+
   char linecont[500], xtitle[256], ytitle[256];
   int n, *n_size, *color, *hcol;
   double x,y;
@@ -126,6 +128,10 @@ void PlotGraph(bool linearfit = true, bool plotlegend = true, bool verbose = tru
     df.close();
     n_size[i] = data_x[i].size() -1;
     if(verbose) cout << n_size[i] << endl;
+
+    
+//##########################################################################################################    
+//Plotten
 
     graph[i] = new TGraph(n_size[i], &data_x[i][0], &data_y[i][0]);
     graph[i]->SetLineColor(color[i]);

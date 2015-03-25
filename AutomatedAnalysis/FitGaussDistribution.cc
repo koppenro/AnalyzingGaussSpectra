@@ -387,13 +387,13 @@ int nrTriggers(TString rootfile, TString Source) {
 //--------------------------------------------------------------------------------------------------------------------
 double findsourcelit(TString Source) {
 	if(strstr(Source, "Ag") != NULL) return(22162.99/3.6);
-	if(strstr(Source, "Zn")== 0) return(8639.10/3.6);
-	if(strstr(Source, "Cu")== 0) return(8048.11/3.6);
-	if(strcmp(Source, "Fe")== 0) return(6403.13/3.6);
-	if(strcmp(Source, "Mo")== 0) return(17479.10/3.6);
-	if(strcmp(Source, "In")== 0) return(24209.78/3.6);
-	if(strcmp(Source, "Sn")== 0) return(25271.34/3.6);
-	if(strcmp(Source, "Nd")== 0) return(37361.4/3.6);
+	if(strstr(Source, "Zn") != NULL) return(8639.10/3.6);
+	if(strstr(Source, "Cu") != NULL) return(8048.11/3.6);
+	if(strstr(Source, "Fe") != NULL) return(6403.13/3.6);
+	if(strstr(Source, "Mo") != NULL) return(17479.10/3.6);
+	if(strstr(Source, "In") != NULL) return(24209.78/3.6);
+	if(strstr(Source, "Sn") != NULL) return(25271.34/3.6);
+	if(strstr(Source, "Nd") != NULL) return(37361.4/3.6);
 	else return(-1);
 }	
 

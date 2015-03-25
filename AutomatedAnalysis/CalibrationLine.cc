@@ -14,7 +14,7 @@
 
 using namespace std;
 
-int findCurrentPlace(int current) {
+int findCurrentPlace( int current ) {
 	int availableCurrents[8] = {2,6,10,14,18,22,26,30};
 	int i = 0;
 	while( i < 8 ) {
@@ -38,116 +38,93 @@ void readin(vector <double> *data_x, vector <double> *data_y) {
 		int current;
 		fc >> current;
 		//cout << current << endl;
-		double measurement, expectation;
+		double measurement, expectation; 
 		fc >> measurement;
 		int i = findCurrentPlace(current);
 		data_x[i].push_back(measurement);		// data_x[0] = 2mA, data_x[1] = 6mA, etc.
 		//cout << data_x[findCurrentPlace(current)].push_back(x) << endl;
 		fc >> measurement >> expectation;
-		cout << measurement << " " << expectation << endl;
+		//cout << measurement << " " << expectation << endl;
+		data_y[i].push_back(expectation);
 		fc.getline(linecont, 500);
 	}
 	
+	//Einbauen von n_size?
+}
+
+void PlotGraph(vector <double> *data_x, vector <double> *data_y, bool linearfit = true, bool plotlegend = true) {
+	
+	char xtitle[256], ytitle[256];
+	int n, *n_size, *color, *hcol;
+	double x,y;
+	double *p1, *chisqr, *ndf, *chi_ndf, *p0, *p0err, *p1err; 
+	
+	TString *filename, *legentry;
+	TGraph **graph;
+	TMultiGraph *multi = new TMultiGraph(); 
+	TF1 *p1fit;
+	fstream fc,df;  
+	char *legtitle, *outputsave, *outputtxt, *legsave;
+	
+	TLegend *leg = new TLegend(0.53,0.12,0.9,0.5);
+	leg->SetFillStyle(1001);
+	leg->SetFillColor(0);
+	leg->SetTextSize(0.04);
+	
+	// --------------------------------
+	// init variables
+	// --------------------------------
+	color = new int[n];
+	n_size = new int[n];
+	p0 = new double[n];
+	p0err = new double[n];
+	p1 = new double[n];
+	p1err = new double[n];
+	chisqr = new double[n];
+	ndf = new double[n];
+	chi_ndf = new double[n];
+	filename = new TString[n];
+	legentry = new TString[n];
+	graph = new TGraph*[n];
+	data_x = new vector <double>[n];
+	data_y = new vector <double>[n];
+	legtitle = new char[256];
+	outputsave = new char[500];
+	outputtxt = new char[500];
+	legsave = new char[256];
+
+	//Legendentitle über argv einzugeben, Farben automatisch setzen, legentry[i] beinhaltet Legendenbeschriftung für jede einzelne Messreihe
+	//~ for (int i = 0; i < n; i++){
+		//~ fc >> filename[i] >> color[i] >> legentry[i];
+		//~ if (legentry[i].Contains(":")) legentry[i].ReplaceAll(":"," ");
+		//~ if (verbose)    cout  << filename[i] << "\t" << color[i] << "\t" << legentry[i] << endl;
+	//~ }	
+	//~ leg->SetHeader(legtitle);
+	xtitle = "signal ( Vcal DAC )";
+	ytitle = "charge ( e^{-} )";
+	
+	//FitGrenzen automatisch
+	//~ double min, max;
+	//~ fc >> min;
+	//~ cout << "min " << min << endl;
+	//~ fc >> max;
+	//~ cout << "max " << max << endl;
 	
 	
+	TCanvas *c1 = new TCanvas("c1","PlotGraph",10,10,1500,1000); 
+	//  TCanvas *c1 = new TCanvas("c1","PlotGraph",10,10,800,500);
+	c1->SetFillColor(0);
+	c1->SetBorderMode(0);
+	c1->SetLeftMargin(0.12);
+	
+	
+	//output in pdf und txt Datei mit Steigungen
 }
 
 
 //~ 
 //~ void PlotGraph(bool linearfit = true, bool plotlegend = true, bool verbose = true){
-//~ 
-//~ //Read in
-//~ 
-  //~ char linecont[500], xtitle[256], ytitle[256];
-  //~ int n, *n_size, *color, *hcol;
-  //~ double x,y;
-  //~ vector <double> *data_x, *data_y;
-  //~ double *p1, *chisqr, *ndf, *chi_ndf, *p0, *p0err, *p1err; 
-//~ 
-  //~ TString *filename, *legentry;
-  //~ TGraph **graph;
-  //~ TMultiGraph *multi = new TMultiGraph(); 
-  //~ TF1 *p1fit;
-  //~ fstream fc,df;  
-  //~ char *legtitle, *outputsave, *outputtxt, *legsave;
-//~ 
-  //~ TLegend *leg = new TLegend(0.53,0.12,0.9,0.5);
-  //~ leg->SetFillStyle(1001);
-  //~ leg->SetFillColor(0);
-  //~ leg->SetTextSize(0.04);
-//~ 
-  //~ // read config file
-  //~ fc.open(configfile, ios::in);
-  //~ fc.getline(linecont,500);
-  //~ if (verbose)  cout <<  linecont << endl;
-  //~ fc.getline(linecont,500);
-  //~ if (verbose) cout << linecont << endl;
-  //~ fc >> n;
-  //~ // --------------------------------
-  //~ // init variables
-  //~ // --------------------------------
-  //~ color = new int[n];
-  //~ n_size = new int[n];
-  //~ p0 = new double[n];
-  //~ p0err = new double[n];
-  //~ p1 = new double[n];
-  //~ p1err = new double[n];
-  //~ chisqr = new double[n];
-  //~ ndf = new double[n];
-  //~ chi_ndf = new double[n];
-  //~ filename = new TString[n];
-  //~ legentry = new TString[n];
-  //~ graph = new TGraph*[n];
-  //~ data_x = new vector <double>[n];
-  //~ data_y = new vector <double>[n];
-  //~ legtitle = new char[256];
-  //~ outputsave = new char[500];
-  //~ outputtxt = new char[500];
-  //~ legsave = new char[256];
-  //~ // --------------------------------
-  //~ if (verbose)  cout << n << endl;
-  //~ fc.getline(linecont,500);
-  //~ //  cout << linecont << endl;
-  //~ fc.getline(linecont,500);
-//~ 
-  //~ if (verbose)  cout << linecont << endl;
-  //~ for (int i = 0; i < n; i++){
-    //~ fc >> filename[i] >> color[i] >> legentry[i];
-    //~ if (legentry[i].Contains(":")) legentry[i].ReplaceAll(":"," ");
-    //~ if (verbose)    cout  << filename[i] << "\t" << color[i] << "\t" << legentry[i] << endl;
-  //~ }
-  //~ fc.getline(linecont,500);
-  //~ if (verbose)  cout << linecont << endl;
-  //~ fc.getline(linecont,500);  
-  //~ if (verbose)  cout << linecont << endl;
-  //~ fc.getline(xtitle,256);
-  //~ if (verbose)  cout << "x: " << xtitle << endl;
-  //~ fc.getline(ytitle,256);
-  //~ if (verbose)  cout << "y: " << ytitle << endl;
-  //~ fc.getline(linecont, 500);
-  //~ double min, max;
-  //~ fc >> min;
-  //~ cout << "min " << min << endl;
-  //~ fc >> max;
-  //~ cout << "max " << max << endl;
-  //~ fc.getline(linecont,500);
-  //~ fc.getline(linecont,500);
-  //~ fc.getline(legtitle,256);
-  //~ cout << legtitle << endl;
-  //~ fc.getline(linecont, 500);
-  //~ fc.getline(outputsave,500);
-  //~ cout << outputsave << endl;
-  //~ fc.getline(outputtxt, 500);
-  //~ cout << outputtxt << endl;
-  //~ // config file read
-  //~ leg->SetHeader(legtitle);
-//~ 
-  //~ TCanvas *c1 = new TCanvas("c1","PlotGraph",10,10,1800,1000); // for present.
-  //~ //  TCanvas *c1 = new TCanvas("c1","PlotGraph",10,10,800,500);
-  //~ c1->SetFillColor(0);
-  //~ c1->SetBorderMode(0);
-  //~ c1->SetLeftMargin(0.12);
-//~ 
+	
   //~ char outputtitle[256];
   //~ // read data files and create graphs
 //~ 
@@ -305,6 +282,13 @@ int main( int argc, char *argv[] ){
 	vector <double> *data_x, *data_y;
 	data_x = new vector <double>[n];
 	data_y = new vector <double>[n];
+	
+	if(data_x[0].empty() == true) {
+		cout << "leer " << endl;
+	}
+	else {
+		cout << "nicht leer " << endl;
+	}
 	
 	readin(data_x, data_y);
 	

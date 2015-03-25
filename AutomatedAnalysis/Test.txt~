@@ -1,0 +1,5 @@
+#Output from main.cc, Automatisierte Spektrenauswertung 
+#Source 	 Current (mA)	Peak (Vcal)	ErrorPeak (Vcal)	#Electrons(expected)	Left FitBorder	RightFitBorder	NrEvents	NrTriggers	File
+
+Cu	6	56.7822	0.048667	2399.75	37	77	73212	9858269	Spectrum_Cu_6mA-run007.root	Cu	6	56.7822	0.048667	2399.75	37	77	73212	9858269	Spectrum_Cu_6mA-run007.root	Cu	6	56.7822	0.048667	2399.75	37	77	73212	9858269	Spectrum_Cu_6mA-run007.root	n	
+Cu	6	56.7822	0.048667	2399.75	37	77	73212	9858269	Spectrum_Cu_6mA-run007.root	n	

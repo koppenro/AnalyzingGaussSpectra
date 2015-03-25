@@ -15,13 +15,13 @@ GLIBS		= $(ROOTGLIBS)
 
 #########################
 
-all: exe
+all: FitGaussDistribution
 
-main.o : main.cc
-	$(CC) $(CCFLAGS) -c main.cc -o main.o
+FitGaussDistribution.o : FitGaussDistribution.cc
+	$(CC) $(CCFLAGS) -c FitGaussDistribution.cc -o FitGaussDistribution.o
 
-exe : main.o
-	$(LD) main.o $(LDFLAGS) $(GLIBS) -o exe
+FitGaussDistribution : FitGaussDistribution.o
+	$(LD) FitGaussDistribution.o $(LDFLAGS) $(GLIBS) -o FitGaussDistribution
 
 clean:
 	rm *.o

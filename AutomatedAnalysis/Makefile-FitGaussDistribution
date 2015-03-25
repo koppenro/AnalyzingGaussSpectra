@@ -15,13 +15,13 @@ GLIBS		= $(ROOTGLIBS)
 
 #########################
 
-all: CalibrationLine
+all: FitGaussDistribution
 
-CalibrationLine.o : CalibrationLine.cc
-	$(CC) $(CCFLAGS) -c CalibrationLine.cc -o CalibrationLine.o
+FitGaussDistribution.o : FitGaussDistribution.cc
+	$(CC) $(CCFLAGS) -c FitGaussDistribution.cc -o FitGaussDistribution.o
 
-CalibrationLine : CalibrationLine.o
-	$(LD) CalibrationLine.o $(LDFLAGS) $(GLIBS) -o CalibrationLine
+FitGaussDistribution : FitGaussDistribution.o
+	$(LD) FitGaussDistribution.o $(LDFLAGS) $(GLIBS) -o FitGaussDistribution
 
 clean:
 	rm *.o

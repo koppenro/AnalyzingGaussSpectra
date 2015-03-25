@@ -22,81 +22,14 @@ double * defaultPeakPosition(TString, int);
 int nrTriggers(TString, TString);
 double findsourcelit(TString);
 void deleteLinesTxt(const char*, TString);
-
-double pixelSurface(char * keyword, int col, int row) {
-	
-	double pxSURFACEcm3;
-	if(strstr(keyword, "col") != NULL) {
-		if(col == 0 or col == 51) {
-			pxSURFACEcm3 = 79*(300*0.000001)*(100*0.000001) + (300*0.000001)*(200*0.000001);
-		}
-		else {
-			pxSURFACEcm3 = 79*(150*0.000001)*(100*0.000001) + (150*0.000001)*(200*0.000001);
-		}
-	}
-	if(strstr(keyword, "row") != NULL) {
-		if(row == 79) {
-			pxSURFACEcm3 = 50*(150*0.000001)*(200*0.000001) + 2*(300*0.000001)*(200*0.000001);
-		}
-		else {
-			pxSURFACEcm3 = 50*(150*0.000001)*(100*0.000001) + 2*(300*0.000001)*(100*0.000001);
-		}
-	}
-	else {
-		if(col == 0 and row == 79) {pxSURFACEcm3 = (200*0.000001)*(300*0.000001);}
-		if(col == 0 and row != 79) {pxSURFACEcm3 = (100*0.000001)*(300*0.000001);}
-		if(col == 51 and row == 79) {pxSURFACEcm3 = (200*0.000001)*(300*0.000001);}
-		if(col == 51 and row != 79) {pxSURFACEcm3 = (100*0.000001)*(300*0.000001);}
-		if(row == 79 and col != 0) {pxSURFACEcm3 = (200*0.000001)*(150*0.000001);}
-		else {pxSURFACEcm3 = (100*0.000001)*(150*0.000001);}
-	}
-	return(pxSURFACEcm3);
-}
-
-double calculateRate(int nrEntries, int nrTrigger) {
-	
-	fstream fin;
-	fin.open("defaultMaskFile.dat", ios::in);
-	char linecont[256], keyword[4];
-	int rocNr, col, row;
-	double SURFACEcm3 = 0.6561;
-	
-	while(fin >> keyword) {
-		if(strstr(keyword, "#") != NULL) {
-			fin.getline(linecont, 256);
-		}
-		else {
-			fin >> rocNr;
-			if(strstr(keyword, "pix") != NULL) {
-				fin >> col >> row;
-				//cout << keyword << " " << rocNr << " " << col << " " << row << endl;
-			}
-			if(strstr(keyword, "row") != NULL) {
-				fin >> row;
-				col = -1;
-				//cout << keyword << " " << rocNr << " " << row << endl;
-			}
-			if(strstr(keyword, "col") != NULL) {
-				fin >> col;
-				row = -1;
-				//cout << keyword << " " << rocNr << " " << col << endl;
-			}
-			fin.getline(linecont, 256);
-		}
-		SURFACEcm3 = SURFACEcm3 - pixelSurface(keyword, col, row);
-	}
-	fin.close();
-	
-	double rate = (1.0*nrEntries)/nrTrigger/(25*pow(10,-9))/SURFACEcm3;
-	
-	return(rate);
-}
+double pixelSurface(char*, int, int);
+double calculateRate(int, int);
 
 
 int main( int argc, char *argv[] ){
 	
-	//Possible ways to execute: ./exe or ./exe $searchOption (e.g. ./exe Nd -> analyzing all Files including Nd) or 
-	// ./exe $searchOption $mean $fitBorder (e.g. ./exe Nd 240 20)
+	//Possible ways to execute: ./FitGaussDistribution or ./FitGaussDistribution $searchOption (e.g. ./FitGaussDistribution Nd -> analyzing all Files including Nd) or 
+	// ./FitGaussDistribution $searchOption $mean $fitBorder (e.g. ./FitGaussDistribution Nd 240 20)
 	//First argument: Filter condition for analyzing FileNames
 	//Second argument: Mean of peak (int)
 	//Third argument: Fit Border x as mean +- fitBorder (int)
@@ -285,7 +218,7 @@ TH1 *getTH1(TString rootfile, TString Source, int actualCurrent, double peak, do
 	const char * GETCWD;
 	GETCWD = getcwd(pfad, 256);
 	if(GETCWD == NULL) {}
-	cout << pfad << endl;
+	//cout << pfad << endl;
 	TFile *fr = new TFile(rootfile);
 	TH1 *histo, *hDummy;
 	fr->Cd("Xray");
@@ -388,7 +321,7 @@ TH1 *getTH1(TString rootfile, TString Source, int actualCurrent, double peak, do
 		histo = NULL;
 	}
 	intdir = chdir("../");
-	GETCWD = getcwd(pfad, 256);
+	//GETCWD = getcwd(pfad, 256);
 	cout << pfad << endl;
 	
 	return (histo);
@@ -464,6 +397,7 @@ double findsourcelit(TString Source) {
 	else return(-1);
 }	
 
+//--------------------------------------------------------------------------------------------------------------------
 void deleteLinesTxt(const char * outputtitle, TString rootfile) {
 	
 	fstream fin, fout;
@@ -489,3 +423,75 @@ void deleteLinesTxt(const char * outputtitle, TString rootfile) {
 	rename(outputtmp, outputtitle);
 	
 }
+
+//--------------------------------------------------------------------------------------------------------------------
+double pixelSurface(char * keyword, int col, int row) {
+	
+	double pxSURFACEcm3;
+	if(strstr(keyword, "col") != NULL) {
+		if(col == 0 or col == 51) {
+			pxSURFACEcm3 = 79*(300*0.000001)*(100*0.000001) + (300*0.000001)*(200*0.000001);
+		}
+		else {
+			pxSURFACEcm3 = 79*(150*0.000001)*(100*0.000001) + (150*0.000001)*(200*0.000001);
+		}
+	}
+	if(strstr(keyword, "row") != NULL) {
+		if(row == 79) {
+			pxSURFACEcm3 = 50*(150*0.000001)*(200*0.000001) + 2*(300*0.000001)*(200*0.000001);
+		}
+		else {
+			pxSURFACEcm3 = 50*(150*0.000001)*(100*0.000001) + 2*(300*0.000001)*(100*0.000001);
+		}
+	}
+	else {
+		if(col == 0 and row == 79) {pxSURFACEcm3 = (200*0.000001)*(300*0.000001);}
+		if(col == 0 and row != 79) {pxSURFACEcm3 = (100*0.000001)*(300*0.000001);}
+		if(col == 51 and row == 79) {pxSURFACEcm3 = (200*0.000001)*(300*0.000001);}
+		if(col == 51 and row != 79) {pxSURFACEcm3 = (100*0.000001)*(300*0.000001);}
+		if(row == 79 and col != 0) {pxSURFACEcm3 = (200*0.000001)*(150*0.000001);}
+		else {pxSURFACEcm3 = (100*0.000001)*(150*0.000001);}
+	}
+	return(pxSURFACEcm3);
+}
+
+//--------------------------------------------------------------------------------------------------------------------
+double calculateRate(int nrEntries, int nrTrigger) {
+	
+	fstream fin;
+	fin.open("defaultMaskFile.dat", ios::in);
+	char linecont[256], keyword[4];
+	int rocNr, col, row;
+	double SURFACEcm3 = 0.6561;
+	
+	while(fin >> keyword) {
+		if(strstr(keyword, "#") != NULL) {
+			fin.getline(linecont, 256);
+		}
+		else {
+			fin >> rocNr;
+			if(strstr(keyword, "pix") != NULL) {
+				fin >> col >> row;
+				//cout << keyword << " " << rocNr << " " << col << " " << row << endl;
+			}
+			if(strstr(keyword, "row") != NULL) {
+				fin >> row;
+				col = -1;
+				//cout << keyword << " " << rocNr << " " << row << endl;
+			}
+			if(strstr(keyword, "col") != NULL) {
+				fin >> col;
+				row = -1;
+				//cout << keyword << " " << rocNr << " " << col << endl;
+			}
+			fin.getline(linecont, 256);
+		}
+		SURFACEcm3 = SURFACEcm3 - pixelSurface(keyword, col, row);
+	}
+	fin.close();
+	
+	double rate = (1.0*nrEntries)/nrTrigger/(25*pow(10,-9))/SURFACEcm3;
+	
+	return(rate);
+}
+

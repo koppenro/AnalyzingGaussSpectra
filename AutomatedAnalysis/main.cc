@@ -4,6 +4,7 @@
 #include <string>
 #include <fstream>
 #include <sys/stat.h>
+#include <cmath>
 
 #include "TCanvas.h"
 #include "TH1.h"
@@ -21,6 +22,75 @@ double * defaultPeakPosition(TString, int);
 int nrTriggers(TString, TString);
 double findsourcelit(TString);
 void deleteLinesTxt(const char*, TString);
+
+double pixelSurface(char * keyword, int col, int row) {
+	
+	double pxSURFACEcm3;
+	if(strstr(keyword, "col") != NULL) {
+		if(col == 0 or col == 51) {
+			pxSURFACEcm3 = 79*(300*0.000001)*(100*0.000001) + (300*0.000001)*(200*0.000001);
+		}
+		else {
+			pxSURFACEcm3 = 79*(150*0.000001)*(100*0.000001) + (150*0.000001)*(200*0.000001);
+		}
+	}
+	if(strstr(keyword, "row") != NULL) {
+		if(row == 79) {
+			pxSURFACEcm3 = 50*(150*0.000001)*(200*0.000001) + 2*(300*0.000001)*(200*0.000001);
+		}
+		else {
+			pxSURFACEcm3 = 50*(150*0.000001)*(100*0.000001) + 2*(300*0.000001)*(100*0.000001);
+		}
+	}
+	else {
+		if(col == 0 and row == 79) {pxSURFACEcm3 = (200*0.000001)*(300*0.000001);}
+		if(col == 0 and row != 79) {pxSURFACEcm3 = (100*0.000001)*(300*0.000001);}
+		if(col == 51 and row == 79) {pxSURFACEcm3 = (200*0.000001)*(300*0.000001);}
+		if(col == 51 and row != 79) {pxSURFACEcm3 = (100*0.000001)*(300*0.000001);}
+		if(row == 79 and col != 0) {pxSURFACEcm3 = (200*0.000001)*(150*0.000001);}
+		else {pxSURFACEcm3 = (100*0.000001)*(150*0.000001);}
+	}
+	return(pxSURFACEcm3);
+}
+
+double calculateRate(int nrEntries, int nrTrigger) {
+	
+	fstream fin;
+	fin.open("defaultMaskFile.dat", ios::in);
+	char linecont[256], keyword[4];
+	int rocNr, col, row;
+	double SURFACEcm3 = 0.6561;
+	
+	while(fin >> keyword) {
+		if(strstr(keyword, "#") != NULL) {
+			fin.getline(linecont, 256);
+		}
+		else {
+			fin >> rocNr;
+			if(strstr(keyword, "pix") != NULL) {
+				fin >> col >> row;
+				//cout << keyword << " " << rocNr << " " << col << " " << row << endl;
+			}
+			if(strstr(keyword, "row") != NULL) {
+				fin >> row;
+				col = -1;
+				//cout << keyword << " " << rocNr << " " << row << endl;
+			}
+			if(strstr(keyword, "col") != NULL) {
+				fin >> col;
+				row = -1;
+				//cout << keyword << " " << rocNr << " " << col << endl;
+			}
+			fin.getline(linecont, 256);
+		}
+		SURFACEcm3 = SURFACEcm3 - pixelSurface(keyword, col, row);
+	}
+	fin.close();
+	
+	double rate = (1.0*nrEntries)/nrTrigger/(25*pow(10,-9))/SURFACEcm3;
+	
+	return(rate);
+}
 
 
 int main( int argc, char *argv[] ){
@@ -267,6 +337,7 @@ TH1 *getTH1(TString rootfile, TString Source, int actualCurrent, double peak, do
 		nrEntries = histo->GetEntries();						//Number of entries
 		nrTrigger = nrTriggers(rootfile, Source);				//Number of triggers
 		double lit = findsourcelit(Source);					//Expected number of electrons (NIST)
+		double rate = calculateRate(nrEntries, nrTrigger);		//Calculated rate: Rate = Hits / Trigger / 25 ns / 0,6561 cm² with zero masked pixels
 		
 		intdir = chdir("../results/");
 		const char * outputtitle;
@@ -280,7 +351,7 @@ TH1 *getTH1(TString rootfile, TString Source, int actualCurrent, double peak, do
 			ofstream outputfile;
 			outputfile.open(outputtitle, ios::out);
 			outputfile << "//Output from main.cc, Automatisierte Spektrenauswertung \n";
-			outputfile << "//Source \t Current (mA)\tPeak (Vcal)\tErrorPeak (Vcal)\t#Electrons(expected)\tLeftFitBorder\tRightFitBorder\t#Events\t#Triggers\tRate (Hz/cm^3)\tFile\tComment\n";
+			outputfile << "//Source \t Current (mA)\tPeak (Vcal)\tErrorPeak (Vcal)\t#electrons(expected)\tLeftFitBorder\tRightFitBorder\t#Events\t#Triggers\tRate (Hz/cm^3)\tFile\tComment\n";
 			outputfile.close();
 		}
 		else{
@@ -290,8 +361,8 @@ TH1 *getTH1(TString rootfile, TString Source, int actualCurrent, double peak, do
 		ofstream outputfile;
 		outputfile.open(outputtitle, ios::out | ios::app);
 		outputfile << Source.Data() << "\t" << actualCurrent << "\t" << maxpeak << "\t" << maxpeakerror << "\t" << lit << "\t";
-		outputfile << leftborder << "\t" << rightborder << "\t" << nrEntries << "\t" << nrTrigger << "\t" << rootfile.Data() << "\t";
-		outputfile << comment << "\t";
+		outputfile << leftborder << "\t" << rightborder << "\t" << nrEntries << "\t" << nrTrigger << "\t" << rate << "\t"; 
+		outputfile << rootfile.Data() << "\t" << comment << "\t";
 		outputfile << "\n";
 		outputfile.close();
 		if(intdir == 0) {} 	//this line is only to get rid of the warning, that intdir is initialized but not used
@@ -396,7 +467,6 @@ double findsourcelit(TString Source) {
 void deleteLinesTxt(const char * outputtitle, TString rootfile) {
 	
 	fstream fin, fout;
-	string line, name; 
 	char linecont[1000];
 	
 	fin.open(outputtitle, ios::in);

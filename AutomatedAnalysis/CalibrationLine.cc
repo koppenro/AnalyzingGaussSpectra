@@ -11,6 +11,9 @@
 #include "TFile.h"
 #include "TF1.h"
 #include "TStyle.h"
+#include "TGraph.h"
+#include "TMultiGraph.h"
+#include "TLegend.h"
 
 using namespace std;
 
@@ -41,21 +44,20 @@ void readin(vector <double> *data_x, vector <double> *data_y) {
 		double measurement, expectation; 
 		fc >> measurement;
 		int i = findCurrentPlace(current);
+		//cout << "i " << i << " ";
 		data_x[i].push_back(measurement);		// data_x[0] = 2mA, data_x[1] = 6mA, etc.
-		//cout << data_x[findCurrentPlace(current)].push_back(x) << endl;
+		//cout << data_x[i][0] << " ";
 		fc >> measurement >> expectation;
 		//cout << measurement << " " << expectation << endl;
 		data_y[i].push_back(expectation);
 		fc.getline(linecont, 500);
 	}
-	
-	//Einbauen von n_size?
 }
 
-void PlotGraph(vector <double> *data_x, vector <double> *data_y, bool linearfit = true, bool plotlegend = true) {
+void PlotGraph(vector <double> *data_x, vector <double> *data_y, const int n) {
 	
 	char xtitle[256], ytitle[256];
-	int n, *n_size, *color, *hcol;
+	int *n_size, *color, *hcol;
 	double x,y;
 	double *p1, *chisqr, *ndf, *chi_ndf, *p0, *p0err, *p1err; 
 	
@@ -86,12 +88,11 @@ void PlotGraph(vector <double> *data_x, vector <double> *data_y, bool linearfit 
 	filename = new TString[n];
 	legentry = new TString[n];
 	graph = new TGraph*[n];
-	data_x = new vector <double>[n];
-	data_y = new vector <double>[n];
 	legtitle = new char[256];
 	outputsave = new char[500];
 	outputtxt = new char[500];
 	legsave = new char[256];
+	
 
 	//Legendentitle über argv einzugeben, Farben automatisch setzen, legentry[i] beinhaltet Legendenbeschriftung für jede einzelne Messreihe
 	//~ for (int i = 0; i < n; i++){
@@ -100,8 +101,8 @@ void PlotGraph(vector <double> *data_x, vector <double> *data_y, bool linearfit 
 		//~ if (verbose)    cout  << filename[i] << "\t" << color[i] << "\t" << legentry[i] << endl;
 	//~ }	
 	//~ leg->SetHeader(legtitle);
-	xtitle = "signal ( Vcal DAC )";
-	ytitle = "charge ( e^{-} )";
+//	xtitle = "signal ( Vcal DAC )";
+//	ytitle = "charge ( e^{-} )";
 	
 	//FitGrenzen automatisch
 	//~ double min, max;
@@ -117,7 +118,48 @@ void PlotGraph(vector <double> *data_x, vector <double> *data_y, bool linearfit 
 	c1->SetBorderMode(0);
 	c1->SetLeftMargin(0.12);
 	
-	
+	for(int i = 0; i < n; i++) {
+		n_size[i] = data_x[i].size();
+		//cout << "nsize i " << i << " " << n_size[i] << endl;
+		if(n_size[i] != 0) {
+			graph[i] = new TGraph(n_size[i], &data_x[i][0], &data_y[i][0]);
+		    graph[i]->SetLineColor(color[i]);
+		    graph[i]->SetMarkerStyle(20+i);
+		    graph[i]->SetMarkerColor(color[i]);
+		    graph[i]->SetMarkerSize(0.75);
+		    //graph[i]->Draw("ALP");
+		    
+		    int min = 0;
+		    int max = 250;
+		    p1fit = new TF1("p1fit","pol1",min,max);
+		    p1fit->SetLineWidth(0.4);
+		    p1fit->SetLineStyle(2);
+		    p1fit->SetLineColor(color[i]);
+		     
+		    graph[i]->Fit("p1fit","R");
+		    //graph[i]->Fit("pol1","R");
+		    p0[i]=p1fit->GetParameter(0);
+		    p0err[i]=p1fit->GetParError(0);
+		    p1[i]=p1fit->GetParameter(1);
+		    p1err[i]=p1fit->GetParError(1);
+		    
+		    cout << " adding graph[" << i <<"]" << endl; 
+		    multi->Add(graph[i]);
+		    
+		    multi->Draw("AP");
+			multi->GetXaxis()->SetTitleOffset(0.75);
+			multi->GetXaxis()->SetTitleSize(0.06);
+			multi->GetXaxis()->SetTitle(xtitle);
+			
+			multi->GetYaxis()->SetTitleOffset(1.0);
+			multi->GetYaxis()->SetTitleSize(0.06);
+			multi->GetYaxis()->SetTitle(ytitle);
+			leg->Draw();
+		}
+			
+		
+	}
+	c1->SaveAs("Test.pdf");
 	//output in pdf und txt Datei mit Steigungen
 }
 
@@ -278,19 +320,27 @@ int main( int argc, char *argv[] ){
 	//First argument: Filter condition for analyzing FileNames
 	//Second argument: Mean of peak (int)
 	//Third argument: Fit Border x as mean +- fitBorder (int)
-	const int n = 20;
+	const int n = 8;		//number of different currents 
 	vector <double> *data_x, *data_y;
 	data_x = new vector <double>[n];
 	data_y = new vector <double>[n];
 	
-	if(data_x[0].empty() == true) {
-		cout << "leer " << endl;
-	}
-	else {
-		cout << "nicht leer " << endl;
-	}
+	//~ if(data_x[0].empty() == true) {
+		//~ cout << "leer " << endl;
+	//~ }
+	//~ else {
+		//~ cout << "nicht leer " << endl;
+	//~ }
+	//cout << "Laenge " << int(data_x[0].size())-1 << endl;
 	
 	readin(data_x, data_y);
+	if(data_x[0].empty() == true) {
+		cout << "leer 2" << endl;
+	}
+	else{
+		cout << "voll 2 " << data_x[0].size() << endl;
+	}
+	PlotGraph(data_x, data_y, n);
 	
 	
 	

@@ -56,7 +56,7 @@ void readin(vector <double> *data_x, vector <double> *data_y) {
 
 void PlotGraph(vector <double> *data_x, vector <double> *data_y, const int n) {
 	
-	char xtitle[256], ytitle[256];
+	const char *xtitle, *ytitle;
 	int *n_size, *color, *hcol;
 	double x,y;
 	double *p1, *chisqr, *ndf, *chi_ndf, *p0, *p0err, *p1err; 
@@ -92,6 +92,8 @@ void PlotGraph(vector <double> *data_x, vector <double> *data_y, const int n) {
 	outputsave = new char[500];
 	outputtxt = new char[500];
 	legsave = new char[256];
+	xtitle = new char[256];
+	ytitle = new char[256];
 	
 
 	//Legendentitle über argv einzugeben, Farben automatisch setzen, legentry[i] beinhaltet Legendenbeschriftung für jede einzelne Messreihe
@@ -101,8 +103,8 @@ void PlotGraph(vector <double> *data_x, vector <double> *data_y, const int n) {
 		//~ if (verbose)    cout  << filename[i] << "\t" << color[i] << "\t" << legentry[i] << endl;
 	//~ }	
 	//~ leg->SetHeader(legtitle);
-//	xtitle = "signal ( Vcal DAC )";
-//	ytitle = "charge ( e^{-} )";
+	xtitle = "signal ( Vcal DAC )";
+	ytitle = "charge ( e^{-} )";
 	
 	//FitGrenzen automatisch
 	//~ double min, max;
@@ -123,9 +125,9 @@ void PlotGraph(vector <double> *data_x, vector <double> *data_y, const int n) {
 		//cout << "nsize i " << i << " " << n_size[i] << endl;
 		if(n_size[i] != 0) {
 			graph[i] = new TGraph(n_size[i], &data_x[i][0], &data_y[i][0]);
-		    graph[i]->SetLineColor(color[i]);
+		    graph[i]->SetLineColor(i+1);
 		    graph[i]->SetMarkerStyle(20+i);
-		    graph[i]->SetMarkerColor(color[i]);
+		    graph[i]->SetMarkerColor(i+1);
 		    graph[i]->SetMarkerSize(0.75);
 		    //graph[i]->Draw("ALP");
 		    
@@ -134,7 +136,7 @@ void PlotGraph(vector <double> *data_x, vector <double> *data_y, const int n) {
 		    p1fit = new TF1("p1fit","pol1",min,max);
 		    p1fit->SetLineWidth(0.4);
 		    p1fit->SetLineStyle(2);
-		    p1fit->SetLineColor(color[i]);
+		    p1fit->SetLineColor(i+1);
 		     
 		    graph[i]->Fit("p1fit","R");
 		    //graph[i]->Fit("pol1","R");
@@ -146,6 +148,15 @@ void PlotGraph(vector <double> *data_x, vector <double> *data_y, const int n) {
 		    cout << " adding graph[" << i <<"]" << endl; 
 		    multi->Add(graph[i]);
 		    
+			
+			legentry[i].Append(Form(" p1=%4.1f e^{-}/Vcal",p1[i])); 	//http://www.cplusplus.com/reference/cstdio/printf/
+			leg->AddEntry(graph[i],legentry[i],"LP");
+
+			//~ else{
+			//~ leg->AddEntry(graph[i],legentry[i],"P");
+			//~ }
+		    
+		    
 		    multi->Draw("AP");
 			multi->GetXaxis()->SetTitleOffset(0.75);
 			multi->GetXaxis()->SetTitleSize(0.06);
@@ -155,8 +166,7 @@ void PlotGraph(vector <double> *data_x, vector <double> *data_y, const int n) {
 			multi->GetYaxis()->SetTitleSize(0.06);
 			multi->GetYaxis()->SetTitle(ytitle);
 			leg->Draw();
-		}
-			
+		}		
 		
 	}
 	c1->SaveAs("Test.pdf");

@@ -4,7 +4,6 @@
 #include <string>
 #include <fstream>
 #include <sys/stat.h>
-#include <cmath>
 
 #include "TCanvas.h"
 #include "TH1.h"
@@ -17,41 +16,21 @@ using namespace std;
 TString * listofRootFiles(DIR *, int *, const char *);
 TString * identifySource(TString, TString *, const int *);
 int identifyCurrent(TString, TString *, int *, const int *);
-TH1 * getTH1(TString, TString, int, double, double, double, int, const char *);
+TH1 * getTH1(TString, TString, int, double, double, double, int);
 double * defaultPeakPosition(TString, int);
 int nrTriggers(TString, TString);
 double findsourcelit(TString);
-void deleteLinesTxt(const char*, TString);
-double pixelSurface(char*, int, int);
-double calculateRate(int, int);
-
 
 int main( int argc, char *argv[] ){
 	
-	//Possible ways to execute: ./FitGaussDistribution (temp is "p20" as standard) or ./FitGaussDistribution $temp or ./FitGaussDistribution $temp $searchOption (e.g. ./FitGaussDistribution p20 Nd -> analyzing all Files including Nd) or 
-	// ./FitGaussDistribution $temp $searchOption $mean $fitBorder (e.g. ./FitGaussDistribution p20 Nd 240 20)
-	//First argument: temp (e.g. p20, p10, p0, m10, m20)
-	//Second argument: Filter condition for analyzing FileNames
-	//Third argument: Mean of peak (int)
-	//Fourth argument: Fit Border x as mean +- fitBorder (int)
+	//First argument: Filter condition for analyzing FileNames
+	//Second argument: Mean of peak (int)
+	//Third argument: Fit Border x as mean +- fitBorder (int)
 	
 	int intTest = mkdir("results/", 0777);
-	
-	const char * temp;
-	temp = new char[5];
-	//Temperatur einfügen
-	if(argc == 1) {
-		temp = "p20";
-	}
-	else {
-		temp = argv[1];
-	}
-	long int argv2 = 0;
-	long int argv3 = 0; 
-	if(argc == 5) {
-		argv2 = strtol(argv[3], NULL, 0);
-		argv3 = strtol(argv[4], NULL, 0);
-	}
+	 
+	long int argv2 = strtol(argv[2], NULL, 0);
+	long int argv3 = strtol(argv[3], NULL, 0);
 	
 	DIR *datadir;
 	TString * RootFiles;
@@ -59,7 +38,7 @@ int main( int argc, char *argv[] ){
     //struct dirent *entry;
     const int numbersources = 8;
     int fitBorder = 20;
-    if(argc == 5) {
+    if(argc == 4) {
 		fitBorder = int(argv3);
 	}
     
@@ -84,13 +63,13 @@ int main( int argc, char *argv[] ){
 		CurrentString[i] = Form("_%imA", Currents[i]);
 		//cout << CurrentString[i] << endl;
 	}
-	if(argc == 5 or argc == 3) {
-		searchOption = argv[2];
+	if(argc == 4) {
+		searchOption = argv[1];
 	}
 	else {
 		searchOption = "Spectrum_";		//Standard option to open files that include this string
 	}
-	cout << "test " << endl;
+	
 	int n;
 	datadir = opendir("out");
 	RootFiles = listofRootFiles(datadir, &n, searchOption);		//Read in the root-Files in the directory "out"
@@ -124,7 +103,7 @@ int main( int argc, char *argv[] ){
 					fitParameter[2] = fitParameter[0] + fitBorder;
 				}
 				
-				histo = getTH1(RootFiles[i], actualSource[0], actualCurrent, fitParameter[0], fitParameter[1], fitParameter[2], fitBorder, temp);
+				histo = getTH1(RootFiles[i], actualSource[0], actualCurrent, fitParameter[0], fitParameter[1], fitParameter[2], fitBorder);
 				histo->Draw();
 				 
 				intTest = chdir("results");		
@@ -137,11 +116,49 @@ int main( int argc, char *argv[] ){
 				Char_t *outputpng = Form("%s.png", Substring.Data());
 				c2->SaveAs(outputpng);
 				c2->Clear();
-				intTest = chdir("../out");
+				chdir("../out");
 			}
 		}
+		//chdir("../");
 	}
+	//~ actualSource = identifySource(RootFiles[0], Sources, &numbersources);
+	//~ actualCurrent = identifyCurrent(RootFiles[0], CurrentString, Currents, &numbercurrents);
+	//~ if(strstr(actualSource[0], "False") == NULL) {
+		//~ if(actualCurrent != -1) {
+			//~ cout << RootFiles[0] << "\t" << actualSource[0] << "\t" << actualCurrent << endl;
+		//~ }
+	//~ }
 	
+	//~ TCanvas *c2 = new TCanvas("c2","Roentgenpeak Gauss",10,10,1500,1000);
+	//~ c2->SetLeftMargin(0.15);
+	//~ gPad->SetLeftMargin(0.17);
+	//~ gPad->SetBottomMargin(0.17);
+	//~ c2->SetFillColor(0);
+	//~ c2->SetBorderMode(0);
+	//~ 
+	//~ double * fitParameter;
+	//~ fitParameter = new double[3];
+	//~ fitParameter = defaultPeakPosition(actualSource[0], fitBorder);
+	//~ if(argc == 4) {
+		//~ fitParameter[0] = int(argv2);
+		//~ fitParameter[1] = fitParameter[0] - fitBorder;
+		//~ fitParameter[2] = fitParameter[0] + fitBorder;
+	//~ }
+	//~ 
+	//~ TH1 * histo;
+	//~ histo = getTH1(RootFiles[0], actualSource[0], actualCurrent, fitParameter[0], fitParameter[1], fitParameter[2], fitBorder);
+	//~ histo->Draw();
+	 //~ 
+	//~ intTest = chdir("results");		
+	//~ if(intTest == 1) {}			//this line is only to get rid of the warning, that intdir is initialized but not used
+	//~ 
+	//~ TString Substring;
+	//~ Substring = TString(RootFiles[0](0, RootFiles[0].Length()-5));
+	//~ Char_t *outputpdf = Form("%s.pdf", Substring.Data());
+	//~ c2->SaveAs(outputpdf);
+	//~ Char_t *outputpng = Form("%s.png", Substring.Data());
+	//~ c2->SaveAs(outputpng);
+	//~ 
 	return 0;
 }
 
@@ -221,14 +238,12 @@ int identifyCurrent(TString RootFile, TString * CurrentString, int * Currents , 
 //--------------------------------------------------------------------------------------------------------------------
 
 //Definition of the function for importing and analysing the spectra
-TH1 *getTH1(TString rootfile, TString Source, int actualCurrent, double peak, double leftborder, double rightborder, int fitBorder, const char * temp){	
+TH1 *getTH1(TString rootfile, TString Source, int actualCurrent, double peak, double leftborder, double rightborder, int fitBorder){	
 	
 	int intdir = chdir("out");
 	char pfad[256];
-	const char * GETCWD;
-	GETCWD = getcwd(pfad, 256);
-	if(GETCWD == NULL) {}
-	//cout << pfad << endl;
+	getcwd(pfad, 256);
+	cout << pfad << endl;
 	TFile *fr = new TFile(rootfile);
 	TH1 *histo, *hDummy;
 	fr->Cd("Xray");
@@ -280,7 +295,6 @@ TH1 *getTH1(TString rootfile, TString Source, int actualCurrent, double peak, do
 		nrEntries = histo->GetEntries();						//Number of entries
 		nrTrigger = nrTriggers(rootfile, Source);				//Number of triggers
 		double lit = findsourcelit(Source);					//Expected number of electrons (NIST)
-		double rate = calculateRate(nrEntries, nrTrigger);		//Calculated rate: Rate = Hits / Trigger / 25 ns / 0,6561 cm² with zero masked pixels
 		
 		intdir = chdir("../results/");
 		const char * outputtitle;
@@ -294,18 +308,15 @@ TH1 *getTH1(TString rootfile, TString Source, int actualCurrent, double peak, do
 			ofstream outputfile;
 			outputfile.open(outputtitle, ios::out);
 			outputfile << "//Output from main.cc, Automatisierte Spektrenauswertung \n";
-			outputfile << "//Source\tTemperature\t Current (mA)\tPeak (Vcal)\tErrorPeak (Vcal)\t#electrons(expected)\tLeftFitBorder\tRightFitBorder\t#Events\t#Triggers\tRate (Hz/cm^3)\tFile\tComment\n";
+			outputfile << "//Source \t Current (mA)\tPeak (Vcal)\tErrorPeak (Vcal)\t#Electrons(expected)\tLeftFitBorder\tRightFitBorder\t#Events\t#Triggers\tRate (Hz/cm^3)\tFile\tComment\n";
 			outputfile.close();
-		}
-		else{
-			deleteLinesTxt(outputtitle, rootfile);
 		}
 		//Save measurement as .txt
 		ofstream outputfile;
 		outputfile.open(outputtitle, ios::out | ios::app);
-		outputfile << Source.Data() << "\t" << temp << "\t" << actualCurrent << "\t" << maxpeak << "\t" << maxpeakerror << "\t" << lit << "\t";
-		outputfile << leftborder << "\t" << rightborder << "\t" << nrEntries << "\t" << nrTrigger << "\t" << rate << "\t"; 
-		outputfile << rootfile.Data() << "\t" << comment << "\t";
+		outputfile << Source.Data() << "\t" << actualCurrent << "\t" << maxpeak << "\t" << maxpeakerror << "\t" << lit << "\t";
+		outputfile << leftborder << "\t" << rightborder << "\t" << nrEntries << "\t" << nrTrigger << "\t" << rootfile.Data() << "\t";
+		outputfile << comment << "\t";
 		outputfile << "\n";
 		outputfile.close();
 		if(intdir == 0) {} 	//this line is only to get rid of the warning, that intdir is initialized but not used
@@ -331,7 +342,7 @@ TH1 *getTH1(TString rootfile, TString Source, int actualCurrent, double peak, do
 		histo = NULL;
 	}
 	intdir = chdir("../");
-	//GETCWD = getcwd(pfad, 256);
+	getcwd(pfad, 256);
 	cout << pfad << endl;
 	
 	return (histo);
@@ -364,14 +375,10 @@ double * defaultPeakPosition(TString Source, int fitBorder) {
 		defaultParameter[0] = 167;	//+-25 cause of variations between the used single chip assemblies
 	}
 	if(strstr(Source.Data(), "Nd") != NULL) {
-		defaultParameter[0] = 240;	//+-25 cause of variations between the used single chip assemblies
+		defaultParameter[0] = 250;	//+-25 cause of variations between the used single chip assemblies
 	}
 	defaultParameter[1] = defaultParameter[0] - fitBorder;
 	defaultParameter[2] = defaultParameter[0] + fitBorder;
-	if(strstr(Source.Data(), "Nd") != NULL) {
-		defaultParameter[1] = defaultParameter[0] - fitBorder - 10;
-		defaultParameter[2] = defaultParameter[0] + fitBorder + 10;
-	}
 	
 	return defaultParameter;
 }
@@ -397,111 +404,12 @@ int nrTriggers(TString rootfile, TString Source) {
 //--------------------------------------------------------------------------------------------------------------------
 double findsourcelit(TString Source) {
 	if(strstr(Source, "Ag") != NULL) return(22162.99/3.6);
-	if(strstr(Source, "Zn") != NULL) return(8639.10/3.6);
-	if(strstr(Source, "Cu") != NULL) return(8048.11/3.6);
-	if(strstr(Source, "Fe") != NULL) return(6403.13/3.6);
-	if(strstr(Source, "Mo") != NULL) return(17479.10/3.6);
-	if(strstr(Source, "In") != NULL) return(24209.78/3.6);
-	if(strstr(Source, "Sn") != NULL) return(25271.34/3.6);
-	if(strstr(Source, "Nd") != NULL) return(37361.4/3.6);
+	if(strstr(Source, "Zn")== 0) return(8639.10/3.6);
+	if(strstr(Source, "Cu")== 0) return(8048.11/3.6);
+	if(strcmp(Source, "Fe")== 0) return(6403.13/3.6);
+	if(strcmp(Source, "Mo")== 0) return(17479.10/3.6);
+	if(strcmp(Source, "In")== 0) return(24209.78/3.6);
+	if(strcmp(Source, "Sn")== 0) return(25271.34/3.6);
+	if(strcmp(Source, "Nd")== 0) return(37361.4/3.6);
 	else return(-1);
 }	
-
-//--------------------------------------------------------------------------------------------------------------------
-void deleteLinesTxt(const char * outputtitle, TString rootfile) {
-	
-	fstream fin, fout;
-	char linecont[1000];
-	
-	fin.open(outputtitle, ios::in);
-	const char * outputtmp;
-	outputtmp = new char[255];
-	outputtmp = Form("%s.tmp", outputtitle);
-	fout.open(outputtmp, ios::out);
-	
-	//cout << "Rootfile " <<  rootfile << endl;
-	
-	while(fin.getline(linecont, 1000)) {
-		if(strstr(linecont, rootfile.Data()) == NULL) {
-			// cout << linecont << endl;
-			fout << linecont << endl;
-		}
-	}
-	fin.close();
-	fout.close();
-	remove(outputtitle);
-	rename(outputtmp, outputtitle);
-	
-}
-
-//--------------------------------------------------------------------------------------------------------------------
-double pixelSurface(char * keyword, int col, int row) {
-	
-	double pxSURFACEcm3;
-	if(strstr(keyword, "col") != NULL) {
-		if(col == 0 or col == 51) {
-			pxSURFACEcm3 = 79*(300*0.000001)*(100*0.000001) + (300*0.000001)*(200*0.000001);
-		}
-		else {
-			pxSURFACEcm3 = 79*(150*0.000001)*(100*0.000001) + (150*0.000001)*(200*0.000001);
-		}
-	}
-	if(strstr(keyword, "row") != NULL) {
-		if(row == 79) {
-			pxSURFACEcm3 = 50*(150*0.000001)*(200*0.000001) + 2*(300*0.000001)*(200*0.000001);
-		}
-		else {
-			pxSURFACEcm3 = 50*(150*0.000001)*(100*0.000001) + 2*(300*0.000001)*(100*0.000001);
-		}
-	}
-	else {
-		if(col == 0 and row == 79) {pxSURFACEcm3 = (200*0.000001)*(300*0.000001);}
-		if(col == 0 and row != 79) {pxSURFACEcm3 = (100*0.000001)*(300*0.000001);}
-		if(col == 51 and row == 79) {pxSURFACEcm3 = (200*0.000001)*(300*0.000001);}
-		if(col == 51 and row != 79) {pxSURFACEcm3 = (100*0.000001)*(300*0.000001);}
-		if(row == 79 and col != 0) {pxSURFACEcm3 = (200*0.000001)*(150*0.000001);}
-		else {pxSURFACEcm3 = (100*0.000001)*(150*0.000001);}
-	}
-	return(pxSURFACEcm3);
-}
-
-//--------------------------------------------------------------------------------------------------------------------
-double calculateRate(int nrEntries, int nrTrigger) {
-	
-	fstream fin;
-	fin.open("defaultMaskFile.dat", ios::in);
-	char linecont[256], keyword[4];
-	int rocNr, col, row;
-	double SURFACEcm3 = 0.6561;
-	
-	while(fin >> keyword) {
-		if(strstr(keyword, "#") != NULL) {
-			fin.getline(linecont, 256);
-		}
-		else {
-			fin >> rocNr;
-			if(strstr(keyword, "pix") != NULL) {
-				fin >> col >> row;
-				//cout << keyword << " " << rocNr << " " << col << " " << row << endl;
-			}
-			if(strstr(keyword, "row") != NULL) {
-				fin >> row;
-				col = -1;
-				//cout << keyword << " " << rocNr << " " << row << endl;
-			}
-			if(strstr(keyword, "col") != NULL) {
-				fin >> col;
-				row = -1;
-				//cout << keyword << " " << rocNr << " " << col << endl;
-			}
-			fin.getline(linecont, 256);
-		}
-		SURFACEcm3 = SURFACEcm3 - pixelSurface(keyword, col, row);
-	}
-	fin.close();
-	
-	double rate = (1.0*nrEntries)/nrTrigger/(25*pow(10,-9))/SURFACEcm3;
-	
-	return(rate);
-}
-

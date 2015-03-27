@@ -1,0 +1,21 @@
+//Output from main.cc, Automatisierte Spektrenauswertung 
+//Source	Temperature	 Current (mA)	Peak (Vcal)	ErrorPeak (Vcal)	#electrons(expected)	LeftFitBorder	RightFitBorder	#Events	#Triggers	Rate (Hz/cm^3)	File	Comment
+Cu	p20	6	56.7822	0.048667	2235.59	37	77	73212	9858269	452765	Spectrum_Cu_6mA-run007.root	 	
+Nd	p20	6	236.491	0.438883	10378.2	210	270	93567	19716324	289326	Spectrum_Nd_6mA_200s-run019.root	Fit around expected peak value and NOT maximum bin!	
+Zn	p20	2	59.8866	0.0782376	2399.75	39	79	29925	9858166	185067	Spectrum_Zn_2mA-run009.root	 	
+Zn	p20	6	59.2348	0.0433668	2399.75	39	79	93209	9859781	576344	Spectrum_Zn_6mA-run010.root	 	
+Nd	p20	2	235.116	0.827011	10378.2	210	270	30006	19716706	92782.3	Spectrum_Nd_2mA_200s-run018.root	Fit around expected peak value and NOT maximum bin!	
+Cu	p20	2	55.4604	0.0765988	2235.59	37	77	23721	9858050	146701	Spectrum_Cu_2mA-run008.root	 	
+Sn	p20	2	163.942	0.241089	7019.82	147	187	12495	9858564	77270.5	Spectrum_Sn_2mA-run013.root	 	
+Sn	p20	6	160.878	0.107585	7019.82	141	181	38347	9858464	237145	Spectrum_Sn_6mA-run014.root	 	
+In	p20	2	154.287	0.181629	6724.94	133	173	14689	9858492	90839.1	Spectrum_In_2mA-run012.root	 	
+Mo	p20	6	112.366	0.0541046	4855.31	93	133	111555	9858409	689880	Spectrum_Mo_6mA-run006.root	 	
+Ag	p20	2	142.917	0.152042	6156.39	124	164	19864	9858145	122846	Spectrum_Ag_2mA-run004.root	 	
+Nd	p20	2	237.655	1.01497	10378.2	210	270	15759	9858736	97453.8	Spectrum_Nd_2mA-run017.root	Fit around expected peak value and NOT maximum bin!	
+Ag	p20	6	142.429	0.0839306	6156.39	125	165	60122	9858335	371810	Spectrum_Ag_6mA-run003.root	 	
+Nd	p20	6	239.223	0.643975	10378.2	210	270	46198	9858394	285699	Spectrum_Nd_6mA-run020.root	Fit around expected peak value and NOT maximum bin!	
+Fe	p20	6	50.5418	0.0928046	1778.65	34	74	21634	9858219	133792	Spectrum_Fe_6mA-run015.root	 	
+Fe	p20	2	48.6763	0.141149	1778.65	30	70	6756	9858464	41780.3	Spectrum_Fe_2mA-run016.root	 	
+Mo	p20	2	114.681	0.108299	4855.31	95	135	35720	9857999	220909	Spectrum_Mo_2mA-run005.root	 	
+In	p20	6	157.691	0.137895	6724.94	141	181	45356	9858174	280498	Spectrum_In_6mA-run011.root	 	
+Nd	p20	6	236.741	0.300757	10378.2	210	270	186566	39431978	288453	Spectrum_Nd_6mA_400s-run021.root	Fit around expected peak value and NOT maximum bin!	

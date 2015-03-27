@@ -26,21 +26,28 @@ int main( int argc, char *argv[] ){
 	
 	//Possible ways to execute: ./CalibrationLine or ./CalibrationLine $legendtitle (e.g. ./CalibrationLine M0307:p20 -> spaces in the title with ":" ) 
 	//First argument: Legend Title
-	const int n = 8;		//number of different currents 
+	const int n = 8;		//number of different targets 
 	vector <double> *data_x, *data_y;
 	data_x = new vector <double>[n];
 	data_y = new vector <double>[n];
 	TString legtitle;
 	const char * outputtxt;
 	outputtxt = new char[256];
-	outputtxt = "CalibrationLine-Slopes.txt";
+	outputtxt = "CurrentDependency-Slopes.txt";
 	
 	
-	int * availableCurrents;
-	availableCurrents = new int[n];
-	for(int i = 0; i < n; i++) {
-		availableCurrents[i] = 2+4*i;
-	}
+	TString * availableTargets;
+	availableTargets = new TString[n];
+	availableTargets[0] = "Fe";
+	availableTargets[1] = "Cu";
+	availableTargets[2] = "Zn";
+	availableTargets[3] = "Mo";
+	availableTargets[4] = "Ag";
+	availableTargets[5] = "In";
+	availableTargets[6] = "Sn";
+	availableTargets[7] = "Nd";
+	
+	
 	if(argc == 2) {
 		legtitle.Form("%s", argv[1]);
 		if (legtitle.Contains(":")) legtitle.ReplaceAll(":"," ");
@@ -242,6 +249,6 @@ void PlotGraph(vector <double> *data_x, vector <double> *data_y, const int n, in
 		}
 	}
 	
-	c1->SaveAs("results/CalibrationLines.pdf");
+	c1->SaveAs("results/Test.pdf");
 }
 

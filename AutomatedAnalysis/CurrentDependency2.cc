@@ -18,29 +18,35 @@
 using namespace std;
 
 int findCurrentPlace(int, int*);
-void readin(vector <double> *, vector <double> *, int *);
-void PlotGraph(vector <double> *, vector <double> *, const int, int *, TString, const char *);
+void readin(vector <double> *, vector <double> *, TString *);
+void PlotGraph(vector <double> *, vector <double> *, const int, TString *, TString, const char *);
 
 
 int main( int argc, char *argv[] ){
 	
 	//Possible ways to execute: ./CalibrationLine or ./CalibrationLine $legendtitle (e.g. ./CalibrationLine M0307:p20 -> spaces in the title with ":" ) 
 	//First argument: Legend Title
-	const int n = 8;		//number of different currents 
+	const int n = 8;		//number of different targets 
 	vector <double> *data_x, *data_y;
 	data_x = new vector <double>[n];
 	data_y = new vector <double>[n];
 	TString legtitle;
 	const char * outputtxt;
 	outputtxt = new char[256];
-	outputtxt = "CalibrationLine-Slopes.txt";
+	outputtxt = "RateDependency-Slopes.txt";
 	
 	
-	int * availableCurrents;
-	availableCurrents = new int[n];
-	for(int i = 0; i < n; i++) {
-		availableCurrents[i] = 2+4*i;
-	}
+	TString * availableTargets;
+	availableTargets = new TString[n];
+	availableTargets[0] = "Fe";
+	availableTargets[1] = "Cu";
+	availableTargets[2] = "Zn";
+	availableTargets[3] = "Mo";
+	availableTargets[4] = "Ag";
+	availableTargets[5] = "In";
+	availableTargets[6] = "Sn";
+	availableTargets[7] = "Nd";
+	
 	if(argc == 2) {
 		legtitle.Form("%s", argv[1]);
 		if (legtitle.Contains(":")) legtitle.ReplaceAll(":"," ");
@@ -50,12 +56,12 @@ int main( int argc, char *argv[] ){
 		legtitle = "";
 	}
 	
-	readin(data_x, data_y, availableCurrents);
+	readin(data_x, data_y, availableTargets);
 	int testdir = chdir("results/");
 	if(testdir == 1) {}
 	remove(outputtxt);
 	testdir = chdir("../");
-	PlotGraph(data_x, data_y, n, availableCurrents, legtitle, outputtxt);
+	PlotGraph(data_x, data_y, n, availableTargets, legtitle, outputtxt);
 	
 	return 0;
 }
@@ -65,16 +71,16 @@ int main( int argc, char *argv[] ){
 //#Definition of the functions                                                                                       #
 //####################################################################################################################
 
-int findCurrentPlace( int current, int * availableCurrents ) {
+int findTargetPlace( char * target, TString * availableTargets ) {
 	int i = 0;
 	while( i < 8 ) {
-		if(availableCurrents[i] == current) {break;}
+		if(strstr(availableTargets[i].Data(), target) != NULL) {break;}
 		i++;
 	}
 	return(i);
 }
 
-void readin(vector <double> *data_x, vector <double> *data_y, int * availableCurrents) {
+void readin(vector <double> *data_x, vector <double> *data_y, TString * availableTargets) {
 	
 	char linecont[500];
 	fstream fc;
@@ -82,26 +88,25 @@ void readin(vector <double> *data_x, vector <double> *data_y, int * availableCur
 	fc.getline(linecont, 500);
 	fc.getline(linecont, 500);
 	
-	char source[3];
+	char * source;
+	source = new char[3];
 	while(fc >> source) {
 		//cout << source << endl;
 		int current;
 		fc >> current;
 		//cout << current << endl;
-		double measurement, expectation; 
+		double measurement; 
 		fc >> measurement;
-		int i = findCurrentPlace( current, availableCurrents );
+		int i = findTargetPlace( source, availableTargets );
 		//cout << "i " << i << " ";
-		data_x[i].push_back(measurement);		// data_x[0] = 2mA, data_x[1] = 6mA, etc.
-		//cout << data_x[i][0] << " ";
-		fc >> measurement >> expectation;
-		//cout << measurement << " " << expectation << endl;
-		data_y[i].push_back(expectation);
+		data_x[i].push_back(current);		// data_x[0] = Fe, data_x[1] = Cu, etc.
+		//cout << data_x[i][0] << " " << endl;
+		data_y[i].push_back(measurement);
 		fc.getline(linecont, 500);
 	}
 }
 
-void PlotGraph(vector <double> *data_x, vector <double> *data_y, const int n, int * availableCurrents, TString legtitle, const char * outputtxt) {
+void PlotGraph(vector <double> *data_x, vector <double> *data_y, const int n, TString * availableTargets, TString legtitle, const char * outputtxt) {
 	
 	const char *xtitle, *ytitle;
 	int *n_size;
@@ -113,7 +118,7 @@ void PlotGraph(vector <double> *data_x, vector <double> *data_y, const int n, in
 	TF1 *p1fit;
 	fstream fc,df;  
 	
-	TLegend *leg = new TLegend(0.53,0.12,0.9,0.5);
+	TLegend *leg = new TLegend(0.62,0.52,0.9,0.9);
 	leg->SetFillStyle(1001);
 	leg->SetFillColor(0);
 	leg->SetTextSize(0.04);
@@ -136,8 +141,8 @@ void PlotGraph(vector <double> *data_x, vector <double> *data_y, const int n, in
 		//cout << legtitle << endl;
 		leg->SetHeader(legtitle);
 	}
-	xtitle = "signal ( Vcal DAC )";
-	ytitle = "charge ( e^{-} )";
+	xtitle = "current ( mA )";
+	ytitle = "signal (Vcal DAC)";
 	
 	
 	TCanvas *c1 = new TCanvas("c1","PlotGraph",10,10,1500,1000); 
@@ -150,6 +155,10 @@ void PlotGraph(vector <double> *data_x, vector <double> *data_y, const int n, in
 		n_size[i] = data_x[i].size();
 		//cout << "nsize i " << i << " " << n_size[i] << endl;
 		if(n_size[i] != 0) {
+			cout << "Daten " << endl;
+			for(int j = 0; j < n_size[i]; j++) {
+				cout << data_x[i][j] << " " << data_y[i][j] << endl;
+			}
 			graph[i] = new TGraph(n_size[i], &data_x[i][0], &data_y[i][0]);
 		    if(i > 3) {
 				graph[i]->SetLineColor(i+2);	//LineColor(4) is yellow and not good to see
@@ -161,8 +170,9 @@ void PlotGraph(vector <double> *data_x, vector <double> *data_y, const int n, in
 			}
 		    graph[i]->SetMarkerStyle(20+i);
 		    graph[i]->SetMarkerSize(0.75);
-		    //graph[i]->Draw("ALP");
-		    legentry[i] = Form("%i mA", availableCurrents[i]);
+		    //if(i == 0) {graph[i]->Draw("AP");}
+		    //else {graph[i]->Draw("SAME");}
+		    legentry[i] = Form("%s", availableTargets[i].Data());
 		    
 		    //Find maximum and minimum in data_x to set border of linear fit
 		    double min = data_x[i][0];
@@ -231,17 +241,21 @@ void PlotGraph(vector <double> *data_x, vector <double> *data_y, const int n, in
 			leg->AddEntry(graph[i],legentry[i],"LP");
 		    
 		    multi->Draw("AP");
+		    //if(i == 0) {multi->Draw("AP");}
+		    //else {multi->Draw("SAME");}
 			multi->GetXaxis()->SetTitleOffset(0.75);
 			multi->GetXaxis()->SetTitleSize(0.06);
 			multi->GetXaxis()->SetTitle(xtitle);
+			multi->GetXaxis()->SetRange(0,10);
 			
 			multi->GetYaxis()->SetTitleOffset(1.0);
 			multi->GetYaxis()->SetTitleSize(0.06);
 			multi->GetYaxis()->SetTitle(ytitle);
+			multi->GetYaxis()->SetRange(0,250);
 			leg->Draw();
+			//c1->Update();
 		}
 	}
-	
-	c1->SaveAs("results/CalibrationLines.pdf");
+	c1->SaveAs("results/CurrentDependency.pdf");
 }
 

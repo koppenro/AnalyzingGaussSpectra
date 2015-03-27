@@ -36,8 +36,8 @@ int main( int argc, char *argv[] ){
 	
 	int intTest = mkdir("results/", 0777);
 	
-	long int argv2 = 0;
-	long int argv3 = 0; 
+	long int argv3 = 0;
+	long int argv4 = 0; 
 	if(argc == 4) {
 		argv2 = strtol(argv[2], NULL, 0);
 		argv3 = strtol(argv[3], NULL, 0);

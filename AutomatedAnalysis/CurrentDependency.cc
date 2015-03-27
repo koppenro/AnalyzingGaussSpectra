@@ -17,9 +17,9 @@
 
 using namespace std;
 
-int findCurrentPlace(int, int*);
-void readin(vector <double> *, vector <double> *, int *);
-void PlotGraph(vector <double> *, vector <double> *, const int, int *, TString, const char *);
+int findTargetPlace(char *, TString *);
+void readin(vector <double> *, vector <double> *, TString *);
+void PlotGraph(vector <double> *, vector <double> *, const int, TString *, TString, const char *, double, double);
 
 
 int main( int argc, char *argv[] ){
@@ -34,6 +34,8 @@ int main( int argc, char *argv[] ){
 	const char * outputtxt;
 	outputtxt = new char[256];
 	outputtxt = "CurrentDependency-Slopes.txt";
+	double ylimitup = 250;
+	double ylimitdown = 0;
 	
 	
 	TString * availableTargets;
@@ -47,7 +49,6 @@ int main( int argc, char *argv[] ){
 	availableTargets[6] = "Sn";
 	availableTargets[7] = "Nd";
 	
-	
 	if(argc == 2) {
 		legtitle.Form("%s", argv[1]);
 		if (legtitle.Contains(":")) legtitle.ReplaceAll(":"," ");
@@ -57,12 +58,15 @@ int main( int argc, char *argv[] ){
 		legtitle = "";
 	}
 	
-	readin(data_x, data_y, availableCurrents);
+	readin(data_x, data_y, availableTargets);
+	//~ for(int i = 0; i < n; i++) {
+		//~ cout << data_x[i][0] << " " << data_y[i][0] << endl;
+	//~ }
 	int testdir = chdir("results/");
 	if(testdir == 1) {}
 	remove(outputtxt);
 	testdir = chdir("../");
-	PlotGraph(data_x, data_y, n, availableCurrents, legtitle, outputtxt);
+	PlotGraph(data_x, data_y, n, availableTargets, legtitle, outputtxt, ylimitup, ylimitdown);
 	
 	return 0;
 }
@@ -72,16 +76,17 @@ int main( int argc, char *argv[] ){
 //#Definition of the functions                                                                                       #
 //####################################################################################################################
 
-int findCurrentPlace( int current, int * availableCurrents ) {
+int findTargetPlace( char * source, TString * availableCurrents ) {
 	int i = 0;
 	while( i < 8 ) {
-		if(availableCurrents[i] == current) {break;}
+		if(strstr(availableCurrents[i].Data(), source) != NULL) {break;}
 		i++;
 	}
+	//cout << "i = " << i << endl;
 	return(i);
 }
 
-void readin(vector <double> *data_x, vector <double> *data_y, int * availableCurrents) {
+void readin(vector <double> *data_x, vector <double> *data_y, TString * availableTargets) {
 	
 	char linecont[500];
 	fstream fc;
@@ -89,26 +94,25 @@ void readin(vector <double> *data_x, vector <double> *data_y, int * availableCur
 	fc.getline(linecont, 500);
 	fc.getline(linecont, 500);
 	
-	char source[3];
+	char * source;
+	source = new char[3];
 	while(fc >> source) {
-		//cout << source << endl;
+		cout << source << " ";
 		int current;
-		fc >> current;
-		//cout << current << endl;
-		double measurement, expectation; 
-		fc >> measurement;
-		int i = findCurrentPlace( current, availableCurrents );
-		//cout << "i " << i << " ";
-		data_x[i].push_back(measurement);		// data_x[0] = 2mA, data_x[1] = 6mA, etc.
-		//cout << data_x[i][0] << " ";
-		fc >> measurement >> expectation;
-		//cout << measurement << " " << expectation << endl;
-		data_y[i].push_back(expectation);
+		double measurement; 
+		fc >> current >> measurement;
+		cout << current << " " << measurement << endl;
+		
+		int i = findTargetPlace( source, availableTargets );
+		//~ //cout << "i " << i << " ";
+		data_x[i].push_back(current);		// data_x[0] ^= Fe, data_x[1] ^= Cu, etc.
+		//~ //cout << data_x[i][0] << " ";
+		data_y[i].push_back(measurement);
 		fc.getline(linecont, 500);
 	}
 }
 
-void PlotGraph(vector <double> *data_x, vector <double> *data_y, const int n, int * availableCurrents, TString legtitle, const char * outputtxt) {
+void PlotGraph(vector <double> *data_x, vector <double> *data_y, const int n, TString * availableTargets, TString legtitle, const char * outputtxt, double ylimitup, double ylimitdown) {
 	
 	const char *xtitle, *ytitle;
 	int *n_size;
@@ -143,8 +147,8 @@ void PlotGraph(vector <double> *data_x, vector <double> *data_y, const int n, in
 		//cout << legtitle << endl;
 		leg->SetHeader(legtitle);
 	}
-	xtitle = "signal ( Vcal DAC )";
-	ytitle = "charge ( e^{-} )";
+	xtitle = "current ( mA )";
+	ytitle = "signal ( Vcal DAC )";
 	
 	
 	TCanvas *c1 = new TCanvas("c1","PlotGraph",10,10,1500,1000); 
@@ -168,8 +172,13 @@ void PlotGraph(vector <double> *data_x, vector <double> *data_y, const int n, in
 			}
 		    graph[i]->SetMarkerStyle(20+i);
 		    graph[i]->SetMarkerSize(0.75);
+		    
+		    if(i == n-1) {
+				graph[i]->GetYaxis()->SetRange(0,250);
+			}
+		    //graph[i]->GetYaxis()->SetRange(0,250);
 		    //graph[i]->Draw("ALP");
-		    legentry[i] = Form("%i mA", availableCurrents[i]);
+		    legentry[i] = Form("%s", availableTargets[i].Data());
 		    
 		    //Find maximum and minimum in data_x to set border of linear fit
 		    double min = data_x[i][0];
@@ -234,9 +243,11 @@ void PlotGraph(vector <double> *data_x, vector <double> *data_y, const int n, in
 		    
 		    cout << " adding graph[" << i <<"]" << endl; 
 		    multi->Add(graph[i]);		    	    
-			legentry[i].Append(Form("; p1=%4.1f e^{-}/Vcal",p1[i])); 	//http://www.cplusplus.com/reference/cstdio/printf/
+			legentry[i].Append(Form("; p1=%4.1f Vcal/mA",p1[i])); 	//http://www.cplusplus.com/reference/cstdio/printf/
 			leg->AddEntry(graph[i],legentry[i],"LP");
 		    
+		    multi->SetMaximum(ylimitup);	//Set upper y Axis limit
+		    multi->SetMinimum(ylimitdown);	//Set lower y Axis limit
 		    multi->Draw("AP");
 			multi->GetXaxis()->SetTitleOffset(0.75);
 			multi->GetXaxis()->SetTitleSize(0.06);
@@ -249,6 +260,10 @@ void PlotGraph(vector <double> *data_x, vector <double> *data_y, const int n, in
 		}
 	}
 	
-	c1->SaveAs("results/Test.pdf");
+	TList * test;
+	test = multi->GetListOfGraphs();
+	cout << test << endl;
+	
+	c1->SaveAs("results/CurrentDependency.pdf");
 }
 

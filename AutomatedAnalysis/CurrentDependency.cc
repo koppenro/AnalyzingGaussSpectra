@@ -94,13 +94,14 @@ void readin(vector <double> *data_x, vector <double> *data_y, TString * availabl
 	fc.getline(linecont, 500);
 	fc.getline(linecont, 500);
 	
+	char temp[5];
 	char * source;
 	source = new char[3];
 	while(fc >> source) {
 		cout << source << " ";
 		int current;
 		double measurement; 
-		fc >> current >> measurement;
+		fc >> temp >> current >> measurement;
 		cout << current << " " << measurement << endl;
 		
 		int i = findTargetPlace( source, availableTargets );

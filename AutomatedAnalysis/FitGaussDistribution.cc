@@ -17,7 +17,7 @@ using namespace std;
 TString * listofRootFiles(DIR *, int *, const char *);
 TString * identifySource(TString, TString *, const int *);
 int identifyCurrent(TString, TString *, int *, const int *);
-TH1 * getTH1(TString, TString, int, double, double, double, int);
+TH1 * getTH1(TString, TString, int, double, double, double, int, const char *);
 double * defaultPeakPosition(TString, int);
 int nrTriggers(TString, TString);
 double findsourcelit(TString);
@@ -28,19 +28,29 @@ double calculateRate(int, int);
 
 int main( int argc, char *argv[] ){
 	
-	//Possible ways to execute: ./FitGaussDistribution or ./FitGaussDistribution $searchOption (e.g. ./FitGaussDistribution Nd -> analyzing all Files including Nd) or 
-	// ./FitGaussDistribution $searchOption $mean $fitBorder (e.g. ./FitGaussDistribution Nd 240 20)
-	//First argument: Filter condition for analyzing FileNames
-	//Second argument: Mean of peak (int)
-	//Third argument: Fit Border x as mean +- fitBorder (int)
+	//Possible ways to execute: ./FitGaussDistribution (temp is "p20" as standard) or ./FitGaussDistribution $temp or ./FitGaussDistribution $temp $searchOption (e.g. ./FitGaussDistribution p20 Nd -> analyzing all Files including Nd) or 
+	// ./FitGaussDistribution $temp $searchOption $mean $fitBorder (e.g. ./FitGaussDistribution p20 Nd 240 20)
+	//First argument: temp (e.g. p20, p10, p0, m10, m20)
+	//Second argument: Filter condition for analyzing FileNames
+	//Third argument: Mean of peak (int)
+	//Fourth argument: Fit Border x as mean +- fitBorder (int)
 	
 	int intTest = mkdir("results/", 0777);
 	
-	long int argv3 = 0;
-	long int argv4 = 0; 
-	if(argc == 4) {
-		argv2 = strtol(argv[2], NULL, 0);
-		argv3 = strtol(argv[3], NULL, 0);
+	const char * temp;
+	temp = new char[5];
+	//Temperatur einfügen
+	if(argc == 1) {
+		temp = "p20";
+	}
+	else {
+		temp = argv[1];
+	}
+	long int argv2 = 0;
+	long int argv3 = 0; 
+	if(argc == 5) {
+		argv2 = strtol(argv[3], NULL, 0);
+		argv3 = strtol(argv[4], NULL, 0);
 	}
 	
 	DIR *datadir;
@@ -49,7 +59,7 @@ int main( int argc, char *argv[] ){
     //struct dirent *entry;
     const int numbersources = 8;
     int fitBorder = 20;
-    if(argc == 4) {
+    if(argc == 5) {
 		fitBorder = int(argv3);
 	}
     
@@ -74,13 +84,13 @@ int main( int argc, char *argv[] ){
 		CurrentString[i] = Form("_%imA", Currents[i]);
 		//cout << CurrentString[i] << endl;
 	}
-	if(argc == 4 or argc == 2) {
-		searchOption = argv[1];
+	if(argc == 5 or argc == 3) {
+		searchOption = argv[2];
 	}
 	else {
 		searchOption = "Spectrum_";		//Standard option to open files that include this string
 	}
-	
+	cout << "test " << endl;
 	int n;
 	datadir = opendir("out");
 	RootFiles = listofRootFiles(datadir, &n, searchOption);		//Read in the root-Files in the directory "out"
@@ -114,7 +124,7 @@ int main( int argc, char *argv[] ){
 					fitParameter[2] = fitParameter[0] + fitBorder;
 				}
 				
-				histo = getTH1(RootFiles[i], actualSource[0], actualCurrent, fitParameter[0], fitParameter[1], fitParameter[2], fitBorder);
+				histo = getTH1(RootFiles[i], actualSource[0], actualCurrent, fitParameter[0], fitParameter[1], fitParameter[2], fitBorder, temp);
 				histo->Draw();
 				 
 				intTest = chdir("results");		
@@ -211,7 +221,7 @@ int identifyCurrent(TString RootFile, TString * CurrentString, int * Currents , 
 //--------------------------------------------------------------------------------------------------------------------
 
 //Definition of the function for importing and analysing the spectra
-TH1 *getTH1(TString rootfile, TString Source, int actualCurrent, double peak, double leftborder, double rightborder, int fitBorder){	
+TH1 *getTH1(TString rootfile, TString Source, int actualCurrent, double peak, double leftborder, double rightborder, int fitBorder, const char * temp){	
 	
 	int intdir = chdir("out");
 	char pfad[256];
@@ -284,7 +294,7 @@ TH1 *getTH1(TString rootfile, TString Source, int actualCurrent, double peak, do
 			ofstream outputfile;
 			outputfile.open(outputtitle, ios::out);
 			outputfile << "//Output from main.cc, Automatisierte Spektrenauswertung \n";
-			outputfile << "//Source \t Current (mA)\tPeak (Vcal)\tErrorPeak (Vcal)\t#electrons(expected)\tLeftFitBorder\tRightFitBorder\t#Events\t#Triggers\tRate (Hz/cm^3)\tFile\tComment\n";
+			outputfile << "//Source\tTemperature\t Current (mA)\tPeak (Vcal)\tErrorPeak (Vcal)\t#electrons(expected)\tLeftFitBorder\tRightFitBorder\t#Events\t#Triggers\tRate (Hz/cm^3)\tFile\tComment\n";
 			outputfile.close();
 		}
 		else{
@@ -293,7 +303,7 @@ TH1 *getTH1(TString rootfile, TString Source, int actualCurrent, double peak, do
 		//Save measurement as .txt
 		ofstream outputfile;
 		outputfile.open(outputtitle, ios::out | ios::app);
-		outputfile << Source.Data() << "\t" << actualCurrent << "\t" << maxpeak << "\t" << maxpeakerror << "\t" << lit << "\t";
+		outputfile << Source.Data() << "\t" << temp << "\t" << actualCurrent << "\t" << maxpeak << "\t" << maxpeakerror << "\t" << lit << "\t";
 		outputfile << leftborder << "\t" << rightborder << "\t" << nrEntries << "\t" << nrTrigger << "\t" << rate << "\t"; 
 		outputfile << rootfile.Data() << "\t" << comment << "\t";
 		outputfile << "\n";

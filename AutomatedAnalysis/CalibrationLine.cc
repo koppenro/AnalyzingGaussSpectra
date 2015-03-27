@@ -82,11 +82,11 @@ void readin(vector <double> *data_x, vector <double> *data_y, int * availableCur
 	fc.getline(linecont, 500);
 	fc.getline(linecont, 500);
 	
-	char source[3];
+	char source[3], temp[5];
 	while(fc >> source) {
 		//cout << source << endl;
 		int current;
-		fc >> current;
+		fc >> temp >> current;
 		//cout << current << endl;
 		double measurement, expectation; 
 		fc >> measurement;

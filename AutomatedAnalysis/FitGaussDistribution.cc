@@ -14,6 +14,8 @@
 
 using namespace std;
 
+TF1 *MoReWebAlgorithm(TString rootfile, TString Source, int actualCurrent, double peak, const char * temp, double trimvcal);
+TF1 * FitGaus(TH1 * histo, double initguess, double xmin, double xmax);
 TString * listofRootFiles(DIR *, int *, const char *);
 TString * identifySource(TString, TString *, const int *);
 int identifyCurrent(TString, TString *, int *, const int *);
@@ -34,6 +36,10 @@ int main( int argc, char *argv[] ){
 	//Second argument: Filter condition for analyzing FileNames
 	//Third argument: Mean of peak (int)
 	//Fourth argument: Fit Border x as mean +- fitBorder (int)
+	
+	double trimvcal = 0;
+	cout << "Please type the TrimVcal Value (e.g. 40): ";
+	cin >> trimvcal;
 	
 	int intTest = mkdir("results/", 0777);
 	
@@ -90,7 +96,6 @@ int main( int argc, char *argv[] ){
 	else {
 		searchOption = "Spectrum_";		//Standard option to open files that include this string
 	}
-	cout << "test " << endl;
 	int n;
 	datadir = opendir("out");
 	RootFiles = listofRootFiles(datadir, &n, searchOption);		//Read in the root-Files in the directory "out"
@@ -138,6 +143,19 @@ int main( int argc, char *argv[] ){
 				c2->SaveAs(outputpng);
 				c2->Clear();
 				intTest = chdir("../out");
+				
+				MoReWebAlgorithm(RootFiles[i], actualSource[0], actualCurrent, fitParameter[0], temp, trimvcal);
+				
+				intTest = chdir("../results");		
+				if(intTest == 1) {}			//this line is only to get rid of the warning, that intdir is initialized but not used
+				
+				Substring = TString(RootFiles[i](0, RootFiles[i].Length()-5));
+				outputpdf = Form("%s-MoReWeb.pdf", Substring.Data());
+				c2->SaveAs(outputpdf);
+				outputpng = Form("%s-MoReWeb.png", Substring.Data());
+				c2->SaveAs(outputpng);
+				c2->Clear();
+				intTest = chdir("../out");
 			}
 		}
 	}
@@ -150,8 +168,7 @@ int main( int argc, char *argv[] ){
 //#Definition of the functions                                                                                       #
 //####################################################################################################################
 
-TString * listofRootFiles(DIR *datadir, int * n, const char * searchOption)
-{
+TString * listofRootFiles(DIR *datadir, int * n, const char * searchOption) {
     struct dirent *entry;
     TString * RootFiles;
     RootFiles = new TString[200];
@@ -220,7 +237,273 @@ int identifyCurrent(TString RootFile, TString * CurrentString, int * Currents , 
 
 //--------------------------------------------------------------------------------------------------------------------
 
-//Definition of the function for importing and analysing the spectra
+//Definition of the function for importing and analysing the spectra with MoReWebAlgorithm
+TF1 *MoReWebAlgorithm(TString rootfile, TString Source, int actualCurrent, double peak, const char * temp, double trimvcal){	
+	
+	int intdir = chdir("out");
+	char pfad[256];
+	const char * GETCWD;
+	GETCWD = getcwd(pfad, 256);
+	if(GETCWD == NULL) {}
+	//cout << pfad << endl;
+	TFile *fr = new TFile(rootfile);
+	TH1 *histo, *hDummy;
+	fr->Cd("Xray");
+	double maxpeak, maxpeakerror; 
+	
+	Char_t *histoname = Form("q_%s_C0_V0",Source.Data());	//Build name of histogram with Source
+	cout << histoname << endl;
+
+	gDirectory->GetObject(histoname, hDummy);
+	if (hDummy != 0) {
+		histo = (TH1*)hDummy->Clone("histo");
+		//histo->SetDirectory(0);
+		//histo->Draw("colz");
+		histo->GetYaxis()->SetTitleOffset(1.3);
+		histo->GetYaxis()->SetTitleSize(0.05);
+		histo->GetYaxis()->SetTitle("# Events");
+		histo->GetXaxis()->SetTitleSize(0.05);
+		histo->GetXaxis()->SetTitle("VcalDAC");
+	}
+	else {
+		cout << "Histogrammname ueberpruefen" << endl;
+	}
+	
+	//zooming the x-axis
+	TAxis *axis = histo->GetXaxis();
+	//   axis->SetRangeUser(50,220);  
+	//   axis->SetRangeUser(50,350);  
+	axis->SetRangeUser(0,350);  	
+	
+	const char * comment;
+	comment = new char[500];
+	//First Gaussian fit around the expectation
+	double xmin = histo->GetBinLowEdge(1);
+	double xmax = histo->GetBinLowEdge(histo->GetNbinsX());
+	TF1 * gausfit;
+	gausfit = FitGaus(histo, peak, xmin, xmax);
+	double gaus0 = gausfit->GetParameter(0);
+	double gaus1 = gausfit->GetParameter(1);
+	double gaus2 = gausfit->GetParameter(2);
+	cout << "Found Start parameter: " << gaus0 << " " << gaus1 << " " << gaus2 << endl;
+	
+	
+	//Second Fit with more complexe function
+	const char * name;
+	name = new char[30];
+	name = Form("MoReWeb-fit_%s", histo->GetName());
+	cout << "name " << name << endl;
+	TF1 * myfit = new TF1(name, "([0]+[1]*x+gaus(2)+gaus(5))*(1+TMath::Erf((x-[8])/[9]))/2", xmin, xmax);
+
+	//Find the overall average in the y-direction to define some good starting parameters
+    double y_avg = histo->Integral() / histo->GetNbinsX();
+	double maxbin = gaus1;
+    double maximum = gaus0;
+    double signalSigma = gaus2;
+
+    // Find the overall mean
+	double mean = histo->GetMean();
+
+	//Hard coded limit on the slope of the linear part
+	double param1limit = 0.5;
+	
+	//Hard coded guess at the noise spread
+	double noiseSigma = 30;
+
+	//Hard coded trimvalue for the Erf turn on
+	double trimvalue = trimvcal;
+
+	//Initial guess of constant part is half of the overall y-average
+	myfit->SetParameter(0, y_avg / 2);
+	cout << "SetParameter0: " << myfit->GetParameter(0) << endl;
+	
+	//Limit on the constant part; it should be positive, and below the y-average
+	//because the y-average is biased above the noise by the signal peak
+	myfit->SetParLimits(0, 0, 2 * y_avg);
+	cout << "SetParameterLimits0: " << 0 << " " << 2*y_avg << endl;
+	
+	//Initial guess of the linear part is flat
+	myfit->SetParameter(1, 0);
+	cout << "SetParameter1: " << myfit->GetParameter(1) << endl;
+	
+	//Limits on the linear part, from the hardcoded value above
+	myfit->SetParLimits(1, -4 * param1limit, 4 * param1limit);
+	cout << "SetParameterLimits1: " << -4*param1limit << " " << 4*param1limit << endl;
+	
+	//Initial guess for the size of the signal is the maximum of the histogram
+	myfit->SetParameter(2, maximum);
+	cout << "SetParameter2: " << myfit->GetParameter(2) << endl;
+	myfit->SetParLimits(2, 0.5 * maximum, 2 * maximum);
+	cout << "SetParameterLimits2: " << 0.5*maximum << " " << 2*maximum << endl;
+	
+	//Initial guess for the center of the signal to be where the maximum bin is located
+	myfit->SetParameter(3, maxbin);
+	cout << "SetParameter3: " << myfit->GetParameter(3);
+	
+	double low = maxbin - 2 * signalSigma;
+	//if low < trimvalue:
+	//   low = trimvalue/2
+	myfit->SetParLimits(3, low, maxbin + 2 * signalSigma);
+	cout << "SetParameterLimits3: " << maxbin + 2*signalSigma << endl;
+	
+	//Initial guess for the sigma of the signal, from the hardcoded value above
+	myfit->SetParameter(4, signalSigma);
+	cout << "SetParameter4: " << myfit->GetParameter(4) << endl;
+	
+	myfit->SetParLimits(4, signalSigma - 10, signalSigma + 10);
+	cout << "SetParameterLimits4: " << signalSigma - 10 << signalSigma + 10 << endl;
+	
+	//Initial guess for the size of the guassian noise to be half of the overall y-average (other half is the constant term)
+	myfit->SetParameter(5, y_avg * 10);
+	
+	cout << "SetParameter5: " << myfit->GetParameter(5) << endl;
+	// Limits on the amount of gaussian noise, should be below y-average
+	// but above 0 for the same reasons as listed for Par0
+	myfit->SetParLimits(5, 0, y_avg * 20);
+	cout << "SetParameterLimits4: " << 0 << y_avg *20 << endl;
+	
+	//Initial guess for gaussian noise at the mean of the histogram
+	myfit->SetParameter(6, mean);
+	//Limits on the location of the noise to be somewhere in the fit region
+	myfit->SetParLimits(6, xmin, xmax);
+	
+	//Initial guess for the noise sigma, hardcoded above
+	myfit->SetParameter(7, noiseSigma);
+	//Limits on noise sigma, used to make sure the noise guassian doesn't accidentally try to fit the signal
+	myfit->SetParLimits(7, noiseSigma, 10 * noiseSigma);
+	
+	//Initial guess for the turn on is at the hardcorded trimvalue
+	myfit->SetParameter(8, trimvalue);
+	//Limits on where the turn on occurs are guessed at +-10 away from the given trim value
+	//goes to very low values, but doesn't seem to affect the fit too much. Maybe a lower bound can be set to e-5
+	myfit->SetParLimits(8, 0, trimvalue + 30);
+	
+	//Initial guess for the turn on speed is set to 5
+	myfit->SetParameter(9, 5);
+	//Limit on turn on speed between 0.1 and 10. This value should be positive and shouldn't be much more below 0.1 otherwise it will affect the rest of the fit
+	myfit->SetParLimits(9, 0.01, 20);
+	myfit->SetLineColor(kBlue);	
+
+	histo->Fit(myfit, "");
+	histo->GetXaxis()->SetRange(0, 200);
+	//TF1 * myfunc = histo->GetFunction("myfit");
+	cout << "Chi Quadrat " << myfit->GetChisquare()/myfit->GetNDF() << endl;
+	cout << myfit->GetNDF() << endl;
+	cout << "Chi Quadrat 2 " << histo->Chisquare(myfit)/myfit->GetNDF() << endl;
+	
+	TF1 * backgroundFit = new TF1(name, "([0]+[1]*x+gaus(2))*(1+TMath::Erf((x-[5])/[6]))/2", xmin, xmax);
+	backgroundFit->FixParameter(0, myfit->GetParameter(0));
+	backgroundFit->FixParameter(1, myfit->GetParameter(1));
+	backgroundFit->FixParameter(2, myfit->GetParameter(5));
+	backgroundFit->FixParameter(3, myfit->GetParameter(6));
+	backgroundFit->FixParameter(4, myfit->GetParameter(7));
+	backgroundFit->FixParameter(5, myfit->GetParameter(8));
+	backgroundFit->FixParameter(6, myfit->GetParameter(9));
+	backgroundFit->SetLineColor(kBlue);
+	backgroundFit->SetLineStyle(2);
+	histo->Fit(backgroundFit, "+Q");
+	
+	
+	//cout << "Test " << myfit->GetParameter(3) << endl;
+	histo->SetStats(0);
+	histo->SetLineColor(1);
+	histo->Draw();			
+				
+	intdir = chdir("../results/");
+	const char * outputtitle;
+	outputtitle = new char[250];
+	outputtitle = "Analysis-MoReWebFit.txt";
+	//Save data in .txt
+	std::ifstream FileTest(outputtitle);
+	if(!FileTest) {
+		//Write header in output document
+		ofstream outputfile;
+		outputfile.open(outputtitle, ios::out);
+		outputfile << "//Output from main.cc, Automatisierte Spektrenauswertung mit MoReWeb Algorithmus\n";
+		outputfile << "//Source\tTemperature\t Current (mA)\tPeak (Vcal)\tErrorPeak (Vcal)\tFile\n";
+		outputfile.close();
+	}
+	else{
+		deleteLinesTxt(outputtitle, rootfile);
+	}
+	double lit = findsourcelit(Source);					//Expected number of electrons (NIST)
+	//Extract peak position and error on peak position
+	maxpeak = myfit->GetParameter(3);
+	maxpeakerror = myfit->GetParError(3);
+	
+	//Save measurement as .txt
+	ofstream outputfile;
+	outputfile.open(outputtitle, ios::out | ios::app);
+	outputfile << Source.Data() << "\t" << temp << "\t" << actualCurrent << "\t" << maxpeak << "\t" << maxpeakerror << "\t" << lit << "\t"; 
+	outputfile << rootfile.Data() << "\n";
+	outputfile.close();
+	if(intdir == 0) {} 	//this line is only to get rid of the warning, that intdir is initialized but not used
+	
+	//Save measurement as .root
+	TString Substring;
+	Substring = TString(rootfile(0, rootfile.Length()-5));
+	Char_t * outputhisto = Form("%s-Histo-MoReWeb", Substring.Data());
+	Char_t * outputhistodelete = Form("%s-Histo-MoReWeb;1", Substring.Data());
+	TFile *savehisto = new TFile("Analysis-GaussFit.root", "UPDATE");
+	savehisto->Delete(outputhistodelete);
+	histo->Write(outputhisto);
+	Char_t * outputfit = Form("%s-MoReWebAlgorithm", Substring.Data());
+	Char_t * outputfitdelete = Form("%s-MoReWebAlgorithm;1", Substring.Data());
+	savehisto->Delete(outputfitdelete);
+	myfit->Write(outputfit);
+	savehisto->Close();
+	
+    return myfit;
+	
+}
+
+//--------------------------------------------------------------------------------------------------------------------
+
+TF1 * FitGaus(TH1 * histo, double initguess, double xmin, double xmax) {
+	
+	cout << "xmax " << xmax << endl;
+	
+	TF1 * fit = new TF1("gausFit", "gaus(0)", xmin, xmax);
+	fit->SetLineColor(4);
+	double y_avg = histo->Integral() / histo->GetNbinsX();
+	//Signal peak should be have a sigma of ~10
+	double signalSigma = 10;
+	
+	//former: initguess = self.GetInitialEnergyGuess(self.Attributes["Target"])
+	double left = 0;
+	double right = 0;
+	if (initguess < 0) {
+		//No predefined position, so guess in the middle and put limits and lower and upper bounds and the guess at the mean value
+        initguess = histo->GetMean();
+        left = xmin;
+        right = xmax;
+	}
+    else {
+		left = initguess - 40;
+		right = initguess + 40;
+	}
+	
+	fit->SetParameter(0, 0.5 * y_avg);
+	fit->SetParLimits(0, 0, histo->Integral());
+	fit->SetParameter(1, initguess);
+	fit->SetParLimits(1, left, right);
+	fit->SetParameter(2, signalSigma);
+	//Make sure we actually fit a 'signal like' peak, nothing to brad or narrow
+	fit->SetParLimits(2, signalSigma - 5, signalSigma +5);
+	fit->SetLineColor(kBlue);
+	
+	histo->Fit(fit, "");
+	//histo->GetXaxis()->SetRange(0, 250);
+	//histo->SetStats(0);
+	//histo->SetLineColor(1);
+	//histo->Draw();
+	
+	return fit;
+}
+
+//--------------------------------------------------------------------------------------------------------------------
+
+//Definition of the function for importing and analysing the spectra with single Gaussian peak
 TH1 *getTH1(TString rootfile, TString Source, int actualCurrent, double peak, double leftborder, double rightborder, int fitBorder, const char * temp){	
 	
 	int intdir = chdir("out");

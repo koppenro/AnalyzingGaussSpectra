@@ -18,13 +18,13 @@
 using namespace std;
 
 int findTargetPlace(char *, TString *);
-void readin(vector <double> *, vector <double> *, TString *);
-void PlotGraph(vector <double> *, vector <double> *, const int, TString *, TString, const char *, double, double);
+void readin(vector <double> *, vector <double> *, TString *, const char *);
+void PlotGraph(vector <double> *, vector <double> *, const int, TString *, TString, const char *, double, double, TString);
 
 
 int main( int argc, char *argv[] ){
 	
-	//Possible ways to execute: ./CalibrationLine or ./CalibrationLine $legendtitle (e.g. ./CalibrationLine M0307:p20 -> spaces in the title with ":" ) 
+	//Possible ways to execute: ./CurrentDependecy or ./CurrentDependency $legendtitle (e.g. ./CurrentDependency M0307:p20 -> spaces in the title with ":" ) 
 	//First argument: Legend Title
 	const int n = 8;		//number of different targets 
 	vector <double> *data_x, *data_y;
@@ -34,6 +34,13 @@ int main( int argc, char *argv[] ){
 	const char * outputtxt;
 	outputtxt = new char[256];
 	outputtxt = "CurrentDependency-Slopes.txt";
+	TString outputpdf;
+	outputpdf = "results/CurrentDependency";
+	const char* outputtxt2;
+	outputtxt2 = new char[256];
+	outputtxt2 = "CurrentDependency-Slopes-MoReWeb.txt";
+	TString outputpdf2;
+	outputpdf2 = "results/CurrentDependency-MoReWeb";
 	double ylimitup = 250;
 	double ylimitdown = 0;
 	
@@ -58,7 +65,11 @@ int main( int argc, char *argv[] ){
 		legtitle = "";
 	}
 	
-	readin(data_x, data_y, availableTargets);
+	//Analyse single gauss fit data
+	const char *datafile;
+	datafile = new char[256];
+	datafile = "results/Analysis-GaussFit.txt";
+	readin(data_x, data_y, availableTargets, datafile);
 	//~ for(int i = 0; i < n; i++) {
 		//~ cout << data_x[i][0] << " " << data_y[i][0] << endl;
 	//~ }
@@ -66,7 +77,19 @@ int main( int argc, char *argv[] ){
 	if(testdir == 1) {}
 	remove(outputtxt);
 	testdir = chdir("../");
-	PlotGraph(data_x, data_y, n, availableTargets, legtitle, outputtxt, ylimitup, ylimitdown);
+	PlotGraph(data_x, data_y, n, availableTargets, legtitle, outputtxt, ylimitup, ylimitdown, outputpdf);
+	
+	//Analyse MoReWeb fit
+	datafile = "results/Analysis-MoReWebFit.txt";
+	vector <double> *dataMW_x, *dataMW_y;
+	dataMW_x = new vector <double>[n];
+	dataMW_y = new vector <double>[n];
+	readin(dataMW_x, dataMW_y, availableTargets, datafile);
+	testdir = chdir("results/");
+	remove(outputtxt2);
+	testdir = chdir("../");
+	legtitle.Append(" - MWeb");
+	PlotGraph(dataMW_x, dataMW_y, n, availableTargets, legtitle, outputtxt2, ylimitup, ylimitdown, outputpdf2);
 	
 	return 0;
 }
@@ -86,11 +109,11 @@ int findTargetPlace( char * source, TString * availableCurrents ) {
 	return(i);
 }
 
-void readin(vector <double> *data_x, vector <double> *data_y, TString * availableTargets) {
+void readin(vector <double> *data_x, vector <double> *data_y, TString * availableTargets, const char * txt) {
 	
 	char linecont[500];
 	fstream fc;
-	fc.open("results/Analysis-GaussFit.txt", ios::in);
+	fc.open(txt, ios::in);
 	fc.getline(linecont, 500);
 	fc.getline(linecont, 500);
 	
@@ -113,7 +136,7 @@ void readin(vector <double> *data_x, vector <double> *data_y, TString * availabl
 	}
 }
 
-void PlotGraph(vector <double> *data_x, vector <double> *data_y, const int n, TString * availableTargets, TString legtitle, const char * outputtxt, double ylimitup, double ylimitdown) {
+void PlotGraph(vector <double> *data_x, vector <double> *data_y, const int n, TString * availableTargets, TString legtitle, const char * outputtxt, double ylimitup, double ylimitdown, TString outputpdf) {
 	
 	const char *xtitle, *ytitle;
 	int *n_size;
@@ -172,7 +195,9 @@ void PlotGraph(vector <double> *data_x, vector <double> *data_y, const int n, TS
 				graph[i]->SetMarkerColor(i+1);
 			}
 		    graph[i]->SetMarkerStyle(20+i);
-		    graph[i]->SetMarkerSize(0.75);
+		    //graph[i]->SetMarkerSize(0.75);
+		    graph[i]->SetMarkerSize(1.5);
+		    //graph[i]->SetLineWidth(2);
 		    
 		    if(i == n-1) {
 				graph[i]->GetYaxis()->SetRange(0,250);
@@ -197,7 +222,7 @@ void PlotGraph(vector <double> *data_x, vector <double> *data_y, const int n, TS
 			}
 		    
 		    p1fit = new TF1("p1fit","pol1",min,max);
-		    p1fit->SetLineWidth(0.4);
+		    p1fit->SetLineWidth(3);
 		    p1fit->SetLineStyle(2);
 		    if(i > 3) {
 				p1fit->SetLineColor(i+2);	//LineColor(4) is yellow and not good to see
@@ -244,7 +269,7 @@ void PlotGraph(vector <double> *data_x, vector <double> *data_y, const int n, TS
 		    
 		    cout << " adding graph[" << i <<"]" << endl; 
 		    multi->Add(graph[i]);		    	    
-			legentry[i].Append(Form("; p1=%4.1f Vcal/mA",p1[i])); 	//http://www.cplusplus.com/reference/cstdio/printf/
+			legentry[i].Append(Form("; p1=%4.2f Vcal/mA",p1[i])); 	//http://www.cplusplus.com/reference/cstdio/printf/
 			leg->AddEntry(graph[i],legentry[i],"LP");
 		    
 		    multi->SetMaximum(ylimitup);	//Set upper y Axis limit
@@ -257,14 +282,23 @@ void PlotGraph(vector <double> *data_x, vector <double> *data_y, const int n, TS
 			multi->GetYaxis()->SetTitleOffset(1.0);
 			multi->GetYaxis()->SetTitleSize(0.06);
 			multi->GetYaxis()->SetTitle(ytitle);
-			leg->Draw();
+			//leg->Draw();
 		}
 	}
 	
-	TList * test;
-	test = multi->GetListOfGraphs();
-	cout << test << endl;
+	//~ TList * test;
+	//~ test = multi->GetListOfGraphs();
+	//~ cout << test << endl;
+ 
+	//c1->SaveAs("results/CurrentDependency-woLegend.pdf");
+	//c1->SaveAs("results/CurrentDependency-woLegend.png");
+	c1->SaveAs(outputpdf.Append("-woLegend.pdf"));
+	c1->SaveAs(outputpdf.ReplaceAll(".pdf",".png"));
 	
-	c1->SaveAs("results/CurrentDependency.pdf");
+	leg->Draw();
+	//c1->SaveAs("results/CurrentDependency.pdf");
+	//c1->SaveAs("results/CurrentDependency.png");
+	c1->SaveAs(outputpdf.ReplaceAll("-woLegend",""));
+	c1->SaveAs(outputpdf.ReplaceAll(".png",".pdf"));
 }
 

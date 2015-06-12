@@ -26,6 +26,7 @@ double findsourcelit(TString);
 void deleteLinesTxt(const char*, TString);
 double pixelSurface(char*, int, int);
 double calculateRate(int, int);
+double ChiSquare(TH1* histo, TF1*Fit, double leftborder, double rightborder);
 
 
 int main( int argc, char *argv[] ){
@@ -41,11 +42,16 @@ int main( int argc, char *argv[] ){
 	cout << "Please type the TrimVcal Value (e.g. 40): ";
 	cin >> trimvcal;
 	
+	//~ const char *temp;
+	//~ temp = new char[5];
+	//~ cout << "Please type the temperature (e.g. p20): ";
+	//~ cin >> temp;
+	
 	int intTest = mkdir("results/", 0777);
 	
 	const char * temp;
 	temp = new char[5];
-	//Temperatur einfügen
+	//Set standard temperature to p20
 	if(argc == 1) {
 		temp = "p20";
 	}
@@ -57,6 +63,7 @@ int main( int argc, char *argv[] ){
 	if(argc == 5) {
 		argv2 = strtol(argv[3], NULL, 0);
 		argv3 = strtol(argv[4], NULL, 0);
+		cout << "argv3 " << argv3 << endl << endl << endl;
 	}
 	
 	DIR *datadir;
@@ -168,6 +175,20 @@ int main( int argc, char *argv[] ){
 //#Definition of the functions                                                                                       #
 //####################################################################################################################
 
+//Not sure, that the calculation is right!!!
+double ChiSquare(TH1* histo, TF1* Fit, double leftborder, double rightborder) {
+	
+	double chisquare = 0;
+	for(int i = leftborder; i <= rightborder; i++) {
+		int nMeasured = histo->GetBinContent(i);
+		double nExpected = Fit->Eval(i);
+		chisquare = chisquare + pow((nMeasured-nExpected),2)/(1.0*nExpected);
+	}
+	chisquare = chisquare/Fit->GetNDF();
+	
+	return(2.0);
+}
+
 TString * listofRootFiles(DIR *datadir, int * n, const char * searchOption) {
     struct dirent *entry;
     TString * RootFiles;
@@ -275,8 +296,8 @@ TF1 *MoReWebAlgorithm(TString rootfile, TString Source, int actualCurrent, doubl
 	//   axis->SetRangeUser(50,350);  
 	axis->SetRangeUser(0,350);  	
 	
-	const char * comment;
-	comment = new char[500];
+	//const char * comment;
+	//comment = new char[500];
 	//First Gaussian fit around the expectation
 	double xmin = histo->GetBinLowEdge(1);
 	double xmax = histo->GetBinLowEdge(histo->GetNbinsX());
@@ -385,7 +406,7 @@ TF1 *MoReWebAlgorithm(TString rootfile, TString Source, int actualCurrent, doubl
 	myfit->SetLineColor(kBlue);	
 
 	histo->Fit(myfit, "");
-	histo->GetXaxis()->SetRange(0, 200);
+	histo->GetXaxis()->SetRange(0, peak+100);
 	//TF1 * myfunc = histo->GetFunction("myfit");
 	cout << "Chi Quadrat " << myfit->GetChisquare()/myfit->GetNDF() << endl;
 	cout << myfit->GetNDF() << endl;
@@ -403,8 +424,6 @@ TF1 *MoReWebAlgorithm(TString rootfile, TString Source, int actualCurrent, doubl
 	backgroundFit->SetLineStyle(2);
 	histo->Fit(backgroundFit, "+Q");
 	
-	
-	//cout << "Test " << myfit->GetParameter(3) << endl;
 	histo->SetStats(0);
 	histo->SetLineColor(1);
 	histo->Draw();			
@@ -420,7 +439,7 @@ TF1 *MoReWebAlgorithm(TString rootfile, TString Source, int actualCurrent, doubl
 		ofstream outputfile;
 		outputfile.open(outputtitle, ios::out);
 		outputfile << "//Output from main.cc, Automatisierte Spektrenauswertung mit MoReWeb Algorithmus\n";
-		outputfile << "//Source\tTemperature\t Current (mA)\tPeak (Vcal)\tErrorPeak (Vcal)\tFile\n";
+		outputfile << "//Source\tTemperature\t Current (mA)\tPeak (Vcal)\tErrorPeak (Vcal)\t#electrons(expected)\tFile\n";
 		outputfile.close();
 	}
 	else{
@@ -536,7 +555,8 @@ TH1 *getTH1(TString rootfile, TString Source, int actualCurrent, double peak, do
 		TAxis *axis = histo->GetXaxis();
 		//   axis->SetRangeUser(50,220);  
 		//   axis->SetRangeUser(50,350);  
-		axis->SetRangeUser(0,350);  	
+		//	 axis->SetRangeUser(140,180);  	
+		axis->SetRangeUser(0,peak+100);
 		
 		
 		const char * comment;
@@ -607,6 +627,12 @@ TH1 *getTH1(TString rootfile, TString Source, int actualCurrent, double peak, do
 		Fit->Write(outputfit);
 		savehisto->Close();
 		
+		//~ cout << "Single Gaussian Chi Quadrat " << endl;
+		//~ cout << "Chi Quadrat " << Fit->GetChisquare()/Fit->GetNDF() << endl;
+		//~ cout << Fit->GetNDF() << endl;
+		//~ cout << "Chi Quadrat 2 " << histo->Chisquare(Fit)/Fit->GetNDF() << endl;
+		
+		
 		//intdir = chdir("../out");
 	}
 	else { 
@@ -647,13 +673,15 @@ double * defaultPeakPosition(TString Source, int fitBorder) {
 		defaultParameter[0] = 167;	//+-25 cause of variations between the used single chip assemblies
 	}
 	if(strstr(Source.Data(), "Nd") != NULL) {
-		defaultParameter[0] = 240;	//+-25 cause of variations between the used single chip assemblies
+		defaultParameter[0] = 220;	//+-25 cause of variations between the used single chip assemblies
 	}
 	defaultParameter[1] = defaultParameter[0] - fitBorder;
 	defaultParameter[2] = defaultParameter[0] + fitBorder;
 	if(strstr(Source.Data(), "Nd") != NULL) {
-		defaultParameter[1] = defaultParameter[0] - fitBorder - 10;
-		defaultParameter[2] = defaultParameter[0] + fitBorder + 10;
+		if(fitBorder != 20) {
+			defaultParameter[1] = defaultParameter[0] - fitBorder - 10;
+			defaultParameter[2] = defaultParameter[0] + fitBorder + 10;
+		}
 	}
 	
 	return defaultParameter;

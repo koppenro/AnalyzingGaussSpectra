@@ -18,8 +18,8 @@
 using namespace std;
 
 int findCurrentPlace(int, int*);
-void readin(vector <double> *, vector <double> *, int *);
-void PlotGraph(vector <double> *, vector <double> *, const int, int *, TString, const char *);
+void readin(vector <double> *, vector <double> *, int *, const char *);
+void PlotGraph(vector <double> *, vector <double> *, const int, int *, TString, const char *, TString);
 
 
 int main( int argc, char *argv[] ){
@@ -34,6 +34,13 @@ int main( int argc, char *argv[] ){
 	const char * outputtxt;
 	outputtxt = new char[256];
 	outputtxt = "CalibrationLine-Slopes.txt";
+	TString outputpdf;
+	outputpdf = "results/CalibrationLine";
+	const char* outputtxt2;
+	outputtxt2 = new char[256];
+	outputtxt2 = "CalibrationLine-Slopes-MoReWeb.txt";
+	TString outputpdf2;
+	outputpdf2 = "results/CalibrationLine-MoReWeb";
 	
 	
 	int * availableCurrents;
@@ -50,12 +57,29 @@ int main( int argc, char *argv[] ){
 		legtitle = "";
 	}
 	
-	readin(data_x, data_y, availableCurrents);
+	// Calibration line with single gaussian fit
+	const char *datafile;
+	datafile = new char[256];
+	datafile = "results/Analysis-GaussFit.txt";
+	readin(data_x, data_y, availableCurrents, datafile);
 	int testdir = chdir("results/");
 	if(testdir == 1) {}
 	remove(outputtxt);
+	remove(outputtxt2);
 	testdir = chdir("../");
-	PlotGraph(data_x, data_y, n, availableCurrents, legtitle, outputtxt);
+	PlotGraph(data_x, data_y, n, availableCurrents, legtitle, outputtxt, outputpdf);
+	
+	//Calibration line with MoReWeb fit
+	vector <double> *dataMW_x, *dataMW_y;
+	dataMW_x = new vector <double>[n];
+	dataMW_y = new vector <double>[n];
+	datafile = "results/Analysis-MoReWebFit.txt";
+	readin(dataMW_x, dataMW_y, availableCurrents, datafile);
+	testdir = chdir("results/");
+	remove(outputtxt2);
+	testdir = chdir("../");
+	legtitle.Append(" - MWeb");
+	PlotGraph(dataMW_x, dataMW_y, n, availableCurrents, legtitle, outputtxt2, outputpdf2);
 	
 	return 0;
 }
@@ -74,11 +98,11 @@ int findCurrentPlace( int current, int * availableCurrents ) {
 	return(i);
 }
 
-void readin(vector <double> *data_x, vector <double> *data_y, int * availableCurrents) {
+void readin(vector <double> *data_x, vector <double> *data_y, int * availableCurrents, const char * txt) {
 	
 	char linecont[500];
 	fstream fc;
-	fc.open("results/Analysis-GaussFit.txt", ios::in);
+	fc.open(txt, ios::in);
 	fc.getline(linecont, 500);
 	fc.getline(linecont, 500);
 	
@@ -101,7 +125,7 @@ void readin(vector <double> *data_x, vector <double> *data_y, int * availableCur
 	}
 }
 
-void PlotGraph(vector <double> *data_x, vector <double> *data_y, const int n, int * availableCurrents, TString legtitle, const char * outputtxt) {
+void PlotGraph(vector <double> *data_x, vector <double> *data_y, const int n, int * availableCurrents, TString legtitle, const char * outputtxt, TString outputpdf) {
 	
 	const char *xtitle, *ytitle;
 	int *n_size;
@@ -161,6 +185,7 @@ void PlotGraph(vector <double> *data_x, vector <double> *data_y, const int n, in
 			}
 		    graph[i]->SetMarkerStyle(20+i);
 		    graph[i]->SetMarkerSize(0.75);
+		    //graph[i]->SetLineWidth(1);
 		    //graph[i]->Draw("ALP");
 		    legentry[i] = Form("%i mA", availableCurrents[i]);
 		    
@@ -238,10 +263,18 @@ void PlotGraph(vector <double> *data_x, vector <double> *data_y, const int n, in
 			multi->GetYaxis()->SetTitleOffset(1.0);
 			multi->GetYaxis()->SetTitleSize(0.06);
 			multi->GetYaxis()->SetTitle(ytitle);
-			leg->Draw();
+			//leg->Draw();
 		}
 	}
 	
-	c1->SaveAs("results/CalibrationLines.pdf");
+	c1->SaveAs(outputpdf.Append("-woLegend.pdf"));
+	c1->SaveAs(outputpdf.ReplaceAll(".pdf",".png"));
+	//c1->SaveAs(outputpdf.Form("%s-woLegend.png", outputpdf));
+	
+	leg->Draw();
+	c1->SaveAs(outputpdf.ReplaceAll("-woLegend",""));
+	c1->SaveAs(outputpdf.ReplaceAll(".png",".pdf"));
+	//c1->SaveAs(outputpdf.Form("%s.pdf", outputpdf));
+	//c1->SaveAs(outputpdf.Form("%s-woLegend.png", outputpdf));
 }
 

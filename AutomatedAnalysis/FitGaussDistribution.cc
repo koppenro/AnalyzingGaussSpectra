@@ -43,7 +43,7 @@ int main( int argc, char *argv[] ){
 	temp = new char[5];
 	temp = "p20";
 	bool module = false;
-	long int trimvcal = 40;
+	long int trimvcal = 35;
 	const char * searchOption;
 	searchOption = new char[50];
 	searchOption = "Spectrum_";
@@ -54,20 +54,22 @@ int main( int argc, char *argv[] ){
 	int currentStep = 4;
 	bool fitBorderbool = false;
 	bool fitPeakbool = false;
+	long roc = 0;
 	
 	for(int i = 1; i < argc; i++) {
-		if(strstr(argv[i], "-temp ") != NULL) { temp = argv[i+1]; }		//Set temperature, standard: "p20"
-		if(strstr(argv[i], "-m ") != NULL) { module = true; }			//Set module, standard: false
-		if(strstr(argv[i], "-T ") != NULL) { trimvcal = strtol(argv[i+1],NULL,0); }		//Set trim value, standard: 40
-		if(strstr(argv[i], "-s ") != NULL) { searchOption = argv[i+1]; }		//Set search option, standard: "Spectrum_"
-		if(strstr(argv[i], "-fb ") != NULL) { fitBorder = int(strtol(argv[i+1], NULL, 0)); fitBorderbool = true; }	//Set fitBorder to do fit around peak, standard: "20"
-		if(strstr(argv[i], "-fp ") != NULL) { fitPeak = int(strtol(argv[i+1], NULL, 0)); fitPeakbool = true; }		//Set expected peak value
-		if(strstr(argv[i], "-c ") != NULL) { 
+		if(strstr(argv[i], "-temp") != NULL) { temp = argv[i+1]; }		//Set temperature, standard: "p20"
+		if(strstr(argv[i], "-m") != NULL) { module = true; }			//Set module, standard: false
+		if(strstr(argv[i], "-roc") != NULL) { roc = int(strtol(argv[i+1], NULL, 0)); cout << "ROC " << roc << endl << endl;}
+		if(strstr(argv[i], "-T") != NULL) { trimvcal = strtol(argv[i+1], NULL, 0);}		//Set trim value, standard: 35
+		if(strstr(argv[i], "-s") != NULL) { searchOption = argv[i+1]; }		//Set search option, standard: "Spectrum_"
+		if(strstr(argv[i], "-fb") != NULL) { fitBorder = int(strtol(argv[i+1], NULL, 0)); fitBorderbool = true; }	//Set fitBorder to do fit around peak, standard: "20"
+		if(strstr(argv[i], "-fp") != NULL) { fitPeak = int(strtol(argv[i+1], NULL, 0)); fitPeakbool = true; }		//Set expected peak value
+		if(strstr(argv[i], "-c") != NULL) { 
 			currentBegin = int(strtol(argv[i+1], NULL, 0));		//Set start value of current, standard: 2mA
 			currentEnd = int(strtol(argv[i+2], NULL, 0));		//Set end value of current, standard: 30mA
 			currentStep = int(strtol(argv[i+3], NULL, 0));		//Set current step, standard: 4mA
 		}
-		if(strstr(argv[i], "-nc ") != NULL) { currentBegin = 0; currentEnd = 0; currentStep = 1; }
+		if(strstr(argv[i], "-nc") != NULL) { currentBegin = 0; currentEnd = 0; currentStep = 1; }
 	}
 	//Produce list of Currents
 	int * Currents;
@@ -75,7 +77,7 @@ int main( int argc, char *argv[] ){
 	Currents[0] = 0;
 	TString *CurrentString;
     CurrentString = new TString[30];
-	int numberofcurrents = (currentEnd - currentBegin)/currentStep;
+	int numberofcurrents = (currentEnd - currentBegin)/currentStep+1;
 	for(int i = 0; i < numberofcurrents; i++) {
 		Currents[i] = currentBegin + currentStep*i;
 		CurrentString[i] = Form("_%imA", Currents[i]);
@@ -146,6 +148,7 @@ int main( int argc, char *argv[] ){
 				
 				int nrchips = 1;
 				if(module) {
+					cout << "MODULE " << endl << endl;
 					nrchips = 16;
 					intTest = chdir("results");	
 					intTest = mkdir("C0/", 0777); intTest = mkdir("C1/", 0777); intTest = mkdir("C2/", 0777); intTest = mkdir("C3/", 0777); intTest = mkdir("C4/", 0777); intTest = mkdir("C5/", 0777);
@@ -154,7 +157,12 @@ int main( int argc, char *argv[] ){
 					intTest = chdir("../");
 				}
 				
-				for(int chipnr = 0; i < nrchips; chipnr++) {
+				//Delete this line to analyse the whole module 
+				int chipnr = 0;
+				chipnr = roc;
+				nrchips = roc+1;
+				
+				for(; chipnr < nrchips; chipnr++) {
 					histo = getTH1(RootFiles[i], actualSource[0], actualCurrent, fitParameter[0], fitParameter[1], fitParameter[2], fitBorder, temp, chipnr, module);
 					histo->Draw();
 				
@@ -396,7 +404,7 @@ TF1 *MoReWebAlgorithm(TString rootfile, TString Source, int actualCurrent, doubl
 	
 	//Initial guess for the center of the signal to be where the maximum bin is located
 	myfit->SetParameter(3, maxbin);
-	cout << "SetParameter3: " << myfit->GetParameter(3);
+	cout << "SetParameter3: " << myfit->GetParameter(3) << endl;
 	
 	double low = maxbin - 2 * signalSigma;
 	//if low < trimvalue:
@@ -510,6 +518,7 @@ TF1 *MoReWebAlgorithm(TString rootfile, TString Source, int actualCurrent, doubl
 	savehisto->Delete(outputfitdelete);
 	myfit->Write(outputfit);
 	savehisto->Close();
+	savehisto->Delete();
 	
 	intdir = chdir("../");
 	
@@ -669,6 +678,7 @@ TH1 *getTH1(TString rootfile, TString Source, int actualCurrent, double peak, do
 		savehisto->Delete(outputfitdelete);
 		Fit->Write(outputfit);
 		savehisto->Close();
+		savehisto->Delete();
 		
 		//~ cout << "Single Gaussian Chi Quadrat " << endl;
 		//~ cout << "Chi Quadrat " << Fit->GetChisquare()/Fit->GetNDF() << endl;

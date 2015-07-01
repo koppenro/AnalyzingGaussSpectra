@@ -42,44 +42,116 @@ int main( int argc, char *argv[] ){
 	TString outputpdf2;
 	outputpdf2 = "results/CalibrationLine-MoReWeb";
 	
+	//DEFINITION OF OPTIONS
+	const char * temp;
+	temp = new char[5];
+	temp = "p20";
+	bool module = false;
+	long roc = 0;
+	bool rocbool = false;
+	bool legbool = false;
+	legtitle = "";
+	
+	for(int i = 1; i < argc; i++) {
+		if(strstr(argv[i], "-temp") != NULL) { temp = argv[i+1]; }		//Set temperature, standard: "p20"
+		if(strstr(argv[i], "-m") != NULL) { module = true; }			//Set module, standard: false
+		if(strstr(argv[i], "-roc") != NULL) { roc = int(strtol(argv[i+1], NULL, 0)); rocbool = true; }
+		if(strstr(argv[i], "-l") != NULL) { legtitle = argv[i+1]; legbool = true; }
+	}
+	if (legtitle.Contains(":")) legtitle.ReplaceAll(":"," ");
 	
 	int * availableCurrents;
 	availableCurrents = new int[n];
 	for(int i = 0; i < n; i++) {
 		availableCurrents[i] = 2+4*i;
 	}
-	if(argc == 2) {
-		legtitle.Form("%s", argv[1]);
-		if (legtitle.Contains(":")) legtitle.ReplaceAll(":"," ");
-		//cout << legtitle << endl;
-	}
-	else {
-		legtitle = "";
-	}
+	//~ availableCurrents[0] = 2;
+	//~ availableCurrents[1] = 6;
+	//~ availableCurrents[2] = 10;
+	//~ availableCurrents[3] = 20;
+	//~ availableCurrents[4] = 30;
+	//~ 
+	//if(argc == 2) {
+	//	legtitle.Form("%s", argv[1]);
+	//	
+	//	//cout << legtitle << endl;
+	//}
+	//else {
+	//	legtitle = "";
+	//}
 	
 	// Calibration line with single gaussian fit
 	const char *datafile;
 	datafile = new char[256];
-	datafile = "results/Analysis-GaussFit.txt";
-	readin(data_x, data_y, availableCurrents, datafile);
-	int testdir = chdir("results/");
-	if(testdir == 1) {}
-	remove(outputtxt);
-	remove(outputtxt2);
-	testdir = chdir("../");
-	PlotGraph(data_x, data_y, n, availableCurrents, legtitle, outputtxt, outputpdf);
+	int chipnr = 0;
+	int nrchips = 1;
+	if(module) {
+		nrchips = 16;
+	}
+	if(rocbool) {
+		chipnr = roc;
+		nrchips = roc+1;
+	}
+	const char * outputtxtakt;
+	outputtxtakt = new char[256];
+	const char * outputtxtakt2;
+	outputtxtakt2 = new char[256];
+	TString outputpdfakt;
+	TString outputpdfakt2;
 	
-	//Calibration line with MoReWeb fit
-	vector <double> *dataMW_x, *dataMW_y;
-	dataMW_x = new vector <double>[n];
-	dataMW_y = new vector <double>[n];
-	datafile = "results/Analysis-MoReWebFit.txt";
-	readin(dataMW_x, dataMW_y, availableCurrents, datafile);
-	testdir = chdir("results/");
-	remove(outputtxt2);
-	testdir = chdir("../");
-	legtitle.Append(" - MWeb");
-	PlotGraph(dataMW_x, dataMW_y, n, availableCurrents, legtitle, outputtxt2, outputpdf2);
+	for(; chipnr < nrchips; chipnr++) {
+		
+		legtitle.Append(Form(" - C%i", chipnr));
+		datafile = Form("results/C%i-Analysis-GaussFit.txt", chipnr);
+		//datafile = "results/C0-Analysis-GaussFit.txt";
+		readin(data_x, data_y, availableCurrents, datafile);
+		int testdir = chdir("results/");
+		if(testdir == 1) {}
+		outputtxtakt = Form("C%i-%s", chipnr, outputtxt);
+		outputtxtakt2 = Form("C%i-%s", chipnr, outputtxt2);
+		remove(outputtxtakt);
+		testdir = chdir("../");
+		outputpdf.Form("results/C%i-CalibrationLine", chipnr);
+		outputpdf2.Form("results/C%i-CalibrationLine-MoReWeb", chipnr);
+		PlotGraph(data_x, data_y, n, availableCurrents, legtitle, outputtxtakt, outputpdf);
+		for(int i = 0; i < n; i++) {
+			data_x[i].clear();
+			data_y[i].clear();
+		}
+		
+		//Calibration line with MoReWeb fit
+		vector <double> *dataMW_x, *dataMW_y;
+		dataMW_x = new vector <double>[n];
+		dataMW_y = new vector <double>[n];
+		datafile = Form("results/C%i-Analysis-MoReWebFit.txt", chipnr);
+		//datafile = "results/Analysis-MoReWebFit.txt";
+		readin(dataMW_x, dataMW_y, availableCurrents, datafile);
+		testdir = chdir("results/");
+		remove(outputtxtakt2);
+		testdir = chdir("../");
+		legtitle.Append(" - MWeb");
+		PlotGraph(dataMW_x, dataMW_y, n, availableCurrents, legtitle, outputtxtakt2, outputpdf2);
+		legtitle = TString(legtitle(0,legtitle.Length()-7));
+		for(int i = 0; i < n; i++) {
+			dataMW_x[i].clear();
+			dataMW_y[i].clear();
+		}
+		if(chipnr < 10) {
+			legtitle = TString(legtitle(0, legtitle.Length()-5));
+		}
+		else {
+			legtitle = TString(legtitle(0, legtitle.Length()-6));
+		}
+		
+		//~ if(chipnr < 10) {
+			//~ outputpdf = TString(outputpdf(3, outputpdf.Length()));
+			//~ outputpdf2 = TString(outputpdf2(3, outputpdf2.Length()));
+		//~ }
+		//~ else {
+			//~ outputpdf = TString(outputpdf(4, outputpdf.Length()));
+			//~ outputpdf2 = TString(outputpdf2(4, outputpdf2.Length()));
+		//~ }
+	}
 	
 	return 0;
 }
@@ -274,6 +346,7 @@ void PlotGraph(vector <double> *data_x, vector <double> *data_y, const int n, in
 	leg->Draw();
 	c1->SaveAs(outputpdf.ReplaceAll("-woLegend",""));
 	c1->SaveAs(outputpdf.ReplaceAll(".png",".pdf"));
+	c1->Clear();
 	//c1->SaveAs(outputpdf.Form("%s.pdf", outputpdf));
 	//c1->SaveAs(outputpdf.Form("%s-woLegend.png", outputpdf));
 }

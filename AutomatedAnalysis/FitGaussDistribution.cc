@@ -14,18 +14,18 @@
 
 using namespace std;
 
-TF1 *MoReWebAlgorithm(TString rootfile, TString Source, int actualCurrent, double peak, const char * temp, double trimvcal);
+TF1 *MoReWebAlgorithm(TString rootfile, TString Source, int actualCurrent, double peak, const char * temp, double trimvcal, int, bool);
 TF1 * FitGaus(TH1 * histo, double initguess, double xmin, double xmax);
 TString * listofRootFiles(DIR *, int *, const char *);
 TString * identifySource(TString, TString *, const int *);
-int identifyCurrent(TString, TString *, int *, const int *);
-TH1 * getTH1(TString, TString, int, double, double, double, int, const char *);
+int identifyCurrent(TString, TString *, int *, int);
+TH1 * getTH1(TString, TString, int, double, double, double, int, const char *, int, bool, bool);
 double * defaultPeakPosition(TString, int);
 int nrTriggers(TString, TString);
 double findsourcelit(TString);
 void deleteLinesTxt(const char*, TString);
 double pixelSurface(char*, int, int);
-double calculateRate(int, int);
+double calculateRate(int, int, int);
 double ChiSquare(TH1* histo, TF1*Fit, double leftborder, double rightborder);
 
 
@@ -38,76 +38,80 @@ int main( int argc, char *argv[] ){
 	//Third argument: Mean of peak (int)
 	//Fourth argument: Fit Border x as mean +- fitBorder (int)
 	
-	double trimvcal = 0;
-	cout << "Please type the TrimVcal Value (e.g. 40): ";
-	cin >> trimvcal;
-	
-	//~ const char *temp;
-	//~ temp = new char[5];
-	//~ cout << "Please type the temperature (e.g. p20): ";
-	//~ cin >> temp;
-	
-	int intTest = mkdir("results/", 0777);
-	
+	//DEFINITION OF OPTIONS
 	const char * temp;
 	temp = new char[5];
-	//Set standard temperature to p20
-	if(argc == 1) {
-		temp = "p20";
-	}
-	else {
-		temp = argv[1];
-	}
-	long int argv2 = 0;
-	long int argv3 = 0; 
-	if(argc == 5) {
-		argv2 = strtol(argv[3], NULL, 0);
-		argv3 = strtol(argv[4], NULL, 0);
-		cout << "argv3 " << argv3 << endl << endl << endl;
-	}
+	temp = "p20";
+	bool module = false;
+	long int trimvcal = 35;
+	const char * searchOption;
+	searchOption = new char[50];
+	searchOption = "Spectrum_";
+	int fitBorder = 20;
+	int fitPeak = 0;
+	int currentBegin = 2;
+	int currentEnd = 30;
+	int currentStep = 2;
+	bool fitBorderbool = false;
+	bool fitPeakbool = false;
+	long roc = 0;
+	bool rocbool = false;
+	bool maxbinbool = false;
 	
-	DIR *datadir;
-	TString * RootFiles;
-	RootFiles = new TString[200];
-    //struct dirent *entry;
-    const int numbersources = 8;
-    int fitBorder = 20;
-    if(argc == 5) {
-		fitBorder = int(argv3);
+	for(int i = 1; i < argc; i++) {
+		if(strstr(argv[i], "-temp") != NULL) { temp = argv[i+1]; }		//Set temperature, standard: "p20"
+		if(strstr(argv[i], "-m") != NULL) { module = true; }			//Set module, standard: false
+		if(strstr(argv[i], "-roc") != NULL) { roc = int(strtol(argv[i+1], NULL, 0)); rocbool = true; }
+		if(strstr(argv[i], "-T") != NULL) { trimvcal = strtol(argv[i+1], NULL, 0);}		//Set trim value, standard: 35
+		if(strstr(argv[i], "-s") != NULL) { searchOption = argv[i+1]; }		//Set search option, standard: "Spectrum_"
+		if(strstr(argv[i], "-fb") != NULL) { fitBorder = int(strtol(argv[i+1], NULL, 0)); fitBorderbool = true; }	//Set fitBorder to do fit around peak, standard: "20"
+		if(strstr(argv[i], "-fp") != NULL) { fitPeak = int(strtol(argv[i+1], NULL, 0)); fitPeakbool = true; }		//Set expected peak value
+		if(strstr(argv[i], "-fm") != NULL) { maxbinbool = true; };	//Gaussian fit is done around maximum bin
+		if(strstr(argv[i], "-c") != NULL) { 
+			currentBegin = int(strtol(argv[i+1], NULL, 0));		//Set start value of current, standard: 2mA
+			currentEnd = int(strtol(argv[i+2], NULL, 0));		//Set end value of current, standard: 30mA
+			currentStep = int(strtol(argv[i+3], NULL, 0));		//Set current step, standard: 4mA
+		}
+		if(strstr(argv[i], "-nc") != NULL) { currentBegin = 0; currentEnd = 0; currentStep = 1; }
 	}
-    
-    //Variables to determine Source
+	//Produce list of Currents
+	int * Currents;
+	Currents = new int[30];
+	Currents[0] = 0;
+	TString *CurrentString;
+    CurrentString = new TString[30];
+	int numberofcurrents = (currentEnd - currentBegin)/currentStep+1;
+	for(int i = 0; i < numberofcurrents; i++) {
+		Currents[i] = currentBegin + currentStep*i;
+		CurrentString[i] = Form("_%imA", Currents[i]);
+	}
+	//Currents[numberofcurrents] = 20;
+	//CurrentString[numberofcurrents] = Form("_%imA", Currents[numberofcurrents]);
+	//Variables to determine Source
+	const int numbersources = 8;
     TString *Sources;
 	Sources = new TString[numbersources];
 	Sources[0] = "_Fe"; Sources[1] = "_Cu", Sources[2] = "_Zn", Sources[3] = "_Mo";
 	Sources[4] = "_Ag", Sources[5] = "_In"; Sources[6] = "_Sn", Sources[7] = "_Nd";
 	
-	//Variables to determine Current
-	int * Currents;
-    Currents = new int[8];
-    for(int i = 0; i < 8; i++) {
-		Currents[i] = 2+4*i;		//Currents from 2 to 30 mA with distance 4mA
-	}
-    const int numbercurrents = 8;
-    TString *CurrentString;
-    CurrentString = new TString[numbercurrents];
-    const char * searchOption;
-    searchOption = new char[50];
-    for(int i = 0; i < numbercurrents; i++) {
-		CurrentString[i] = Form("_%imA", Currents[i]);
-		//cout << CurrentString[i] << endl;
-	}
-	if(argc == 5 or argc == 3) {
-		searchOption = argv[2];
-	}
-	else {
-		searchOption = "Spectrum_";		//Standard option to open files that include this string
-	}
+	
+	//###########################################################################################################################
+	//#														BEGIN: MAIN WORK													#
+	//###########################################################################################################################
+	
+	int intTest = mkdir("results/", 0777);
+	
+	//READ IN ROOT FILES WITH SEARCH OPTION
+	DIR *datadir;
+	TString * RootFiles;
+	RootFiles = new TString[200];
+	
 	int n;
 	datadir = opendir("out");
 	RootFiles = listofRootFiles(datadir, &n, searchOption);		//Read in the root-Files in the directory "out"
 	closedir(datadir);
 	
+	//GRAPHICAL OUTPUT
 	TCanvas *c2 = new TCanvas("c2","Roentgenpeak Gauss",10,10,1500,1000);
 	c2->SetLeftMargin(0.15);
 	gPad->SetLeftMargin(0.17);
@@ -115,54 +119,105 @@ int main( int argc, char *argv[] ){
 	c2->SetFillColor(0);
 	c2->SetBorderMode(0);
 	
+	//READ IN HISTOGRAMS AND FIT
 	TH1 * histo;
 	TString * actualSource;
 	actualSource = new TString[1];
 	int actualCurrent;
 	for(int i = 0; i < n; i++) {
 		//cout << RootFiles[i] << endl;
-		actualSource = identifySource(RootFiles[i], Sources, &numbersources);
-		actualCurrent = identifyCurrent(RootFiles[i], CurrentString, Currents, &numbercurrents);
+		actualSource = identifySource(RootFiles[i], Sources, &numbersources);	//Find Source of document in Filename
+		if(currentBegin == 0 and currentBegin == 0) {
+			actualCurrent = 0;
+		}
+		else {
+			actualCurrent = identifyCurrent(RootFiles[i], CurrentString, Currents, numberofcurrents);	//Find Current of document in Filename
+		}
 		if(strstr(actualSource[0], "FALSE") == NULL) {
 			if(actualCurrent != -1) {
 				cout << RootFiles[i] << "\t" << actualSource[0] << "\t" << actualCurrent << endl;
 				
+				//Find and change borders and peak of fit as wished from the user
 				double * fitParameter;
 				fitParameter = new double[3];
 				fitParameter = defaultPeakPosition(actualSource[0], fitBorder);
-				if(argc == 4) {
-					fitParameter[0] = int(argv2);
+				if(fitPeakbool) {
+					fitParameter[0] = fitPeak;
 					fitParameter[1] = fitParameter[0] - fitBorder;
 					fitParameter[2] = fitParameter[0] + fitBorder;
 				}
+				if(fitBorderbool) {
+					fitParameter[1] = fitParameter[0] - fitBorder;
+					fitParameter[2] = fitParameter[0] + fitBorder;
+				}
+				//cout << "FitLeft " << fitParameter[1] << endl << endl;
 				
-				histo = getTH1(RootFiles[i], actualSource[0], actualCurrent, fitParameter[0], fitParameter[1], fitParameter[2], fitBorder, temp);
-				histo->Draw();
-				 
-				intTest = chdir("results");		
-				if(intTest == 1) {}			//this line is only to get rid of the warning, that intdir is initialized but not used
+				int nrchips = 1;
+				if(module) {
+					//cout << "MODULE " << endl << endl;
+					nrchips = 16;
+					intTest = chdir("results");	
+					intTest = mkdir("C0/", 0777); intTest = mkdir("C1/", 0777); intTest = mkdir("C2/", 0777); intTest = mkdir("C3/", 0777); intTest = mkdir("C4/", 0777); intTest = mkdir("C5/", 0777);
+					intTest = mkdir("C6/", 0777); intTest = mkdir("C7/", 0777); intTest = mkdir("C8/", 0777); intTest = mkdir("C9/", 0777); intTest = mkdir("C10/", 0777); intTest = mkdir("C11/", 0777);
+					intTest = mkdir("C12/", 0777); intTest = mkdir("C13/", 0777); intTest = mkdir("C14/", 0777); intTest = mkdir("C15/", 0777); 
+					intTest = chdir("../");
+				}
 				
-				TString Substring;
-				Substring = TString(RootFiles[i](0, RootFiles[i].Length()-5));
-				Char_t *outputpdf = Form("%s.pdf", Substring.Data());
-				c2->SaveAs(outputpdf);
-				Char_t *outputpng = Form("%s.png", Substring.Data());
-				c2->SaveAs(outputpng);
-				c2->Clear();
-				intTest = chdir("../out");
+				//Delete this line to analyse the whole module 
+				int chipnr = 0;
+				if(rocbool) {
+					chipnr = roc;
+					nrchips = roc+1;
+				}
 				
-				MoReWebAlgorithm(RootFiles[i], actualSource[0], actualCurrent, fitParameter[0], temp, trimvcal);
+				for(; chipnr < nrchips; chipnr++) {
+					//cout << "Peak position " << fitParameter[0] << endl << endl;
+					histo = getTH1(RootFiles[i], actualSource[0], actualCurrent, fitParameter[0], fitParameter[1], fitParameter[2], fitBorder, temp, chipnr, module, maxbinbool);
+					histo->Draw();
 				
-				intTest = chdir("../results");		
-				if(intTest == 1) {}			//this line is only to get rid of the warning, that intdir is initialized but not used
+					intTest = chdir("results");		
+					if(module) {
+						Char_t *subdirectory = Form("C%i", chipnr);
+						intTest = chdir(subdirectory);
+						if(intTest == 1) {}			//this line is only to get rid of the warning, that intdir is initialized but not used
+					}
 				
-				Substring = TString(RootFiles[i](0, RootFiles[i].Length()-5));
-				outputpdf = Form("%s-MoReWeb.pdf", Substring.Data());
-				c2->SaveAs(outputpdf);
-				outputpng = Form("%s-MoReWeb.png", Substring.Data());
-				c2->SaveAs(outputpng);
-				c2->Clear();
-				intTest = chdir("../out");
+					TString Substring;
+					Substring = TString(RootFiles[i](0, RootFiles[i].Length()-5));
+					Char_t *outputpdf = Form("%s-C%i-SingleGauss.pdf", Substring.Data(), chipnr);
+					c2->SaveAs(outputpdf);
+					Char_t *outputpng = Form("%s-C%i-SingleGauss.png", Substring.Data(), chipnr);
+					c2->SaveAs(outputpng);
+					c2->Clear();
+					if(module) {
+						intTest = chdir("../");
+					}
+					intTest = chdir("../");
+					
+					//cout << "Peak position " << fitParameter[0] << endl << endl;
+					//MoReWeb Fit
+					MoReWebAlgorithm(RootFiles[i], actualSource[0], actualCurrent, fitParameter[0], temp, trimvcal, chipnr, module);
+					
+					intTest = chdir("results");	
+					if(intTest == 1) {}			//this line is only to get rid of the warning, that intdir is initialized but not used
+					if(module) {
+						Char_t *subdirectory = Form("C%i", chipnr);
+						intTest = chdir(subdirectory);
+						if(intTest == 1) {}			//this line is only to get rid of the warning, that intdir is initialized but not used
+					}	
+				
+					Substring = TString(RootFiles[i](0, RootFiles[i].Length()-5));
+					outputpdf = Form("%s-C%i-MoReWeb.pdf", Substring.Data(), chipnr);
+					c2->SaveAs(outputpdf);
+					outputpng = Form("%s-C%i-MoReWeb.png", Substring.Data(), chipnr);
+					c2->SaveAs(outputpng);
+					c2->Clear();
+					if(module) {
+						intTest = chdir("../");
+					}
+					intTest = chdir("../");
+					
+				}
 			}
 		}
 	}
@@ -243,13 +298,13 @@ TString * identifySource(TString RootFile, TString * Sources, const int * number
 }
 
 //--------------------------------------------------------------------------------------------------------------------
-int identifyCurrent(TString RootFile, TString * CurrentString, int * Currents , const int * numbercurrents) {
+int identifyCurrent(TString RootFile, TString * CurrentString, int * Currents , int numbercurrents) {
 	int j = 0;
-	while (j < *numbercurrents) {		//search for Current
+	while (j < numbercurrents) {		//search for Current
 		if (strstr(RootFile, CurrentString[j]) != NULL) {break;}
 		j++;
 	}
-	if(j == *numbercurrents) {		//Current not found
+	if(j == numbercurrents) {		//Current not found
 		//cout << "if " << endl;
 		return(-1);
 	}
@@ -259,7 +314,7 @@ int identifyCurrent(TString RootFile, TString * CurrentString, int * Currents , 
 //--------------------------------------------------------------------------------------------------------------------
 
 //Definition of the function for importing and analysing the spectra with MoReWebAlgorithm
-TF1 *MoReWebAlgorithm(TString rootfile, TString Source, int actualCurrent, double peak, const char * temp, double trimvcal){	
+TF1 *MoReWebAlgorithm(TString rootfile, TString Source, int actualCurrent, double peak, const char * temp, double trimvcal, int chipnr, bool module){	
 	
 	int intdir = chdir("out");
 	char pfad[256];
@@ -272,7 +327,7 @@ TF1 *MoReWebAlgorithm(TString rootfile, TString Source, int actualCurrent, doubl
 	fr->Cd("Xray");
 	double maxpeak, maxpeakerror; 
 	
-	Char_t *histoname = Form("q_%s_C0_V0",Source.Data());	//Build name of histogram with Source
+	Char_t *histoname = Form("q_%s_C%i_V0",Source.Data(), chipnr);	//Build name of histogram with Source and chip number
 	cout << histoname << endl;
 
 	gDirectory->GetObject(histoname, hDummy);
@@ -294,8 +349,10 @@ TF1 *MoReWebAlgorithm(TString rootfile, TString Source, int actualCurrent, doubl
 	TAxis *axis = histo->GetXaxis();
 	//   axis->SetRangeUser(50,220);  
 	//   axis->SetRangeUser(50,350);  
-	axis->SetRangeUser(0,350);  	
-	
+	axis->SetRangeUser(0,350);
+	if(strstr(Source.Data(), "Nd") != NULL) {
+	    axis->SetRangeUser(150,350);
+	}
 	//const char * comment;
 	//comment = new char[500];
 	//First Gaussian fit around the expectation
@@ -359,7 +416,7 @@ TF1 *MoReWebAlgorithm(TString rootfile, TString Source, int actualCurrent, doubl
 	
 	//Initial guess for the center of the signal to be where the maximum bin is located
 	myfit->SetParameter(3, maxbin);
-	cout << "SetParameter3: " << myfit->GetParameter(3);
+	cout << "SetParameter3: " << myfit->GetParameter(3) << endl;
 	
 	double low = maxbin - 2 * signalSigma;
 	//if low < trimvalue:
@@ -406,7 +463,7 @@ TF1 *MoReWebAlgorithm(TString rootfile, TString Source, int actualCurrent, doubl
 	myfit->SetLineColor(kBlue);	
 
 	histo->Fit(myfit, "");
-	histo->GetXaxis()->SetRange(0, peak+100);
+	histo->GetXaxis()->SetRange(0, peak+120);
 	//TF1 * myfunc = histo->GetFunction("myfit");
 	cout << "Chi Quadrat " << myfit->GetChisquare()/myfit->GetNDF() << endl;
 	cout << myfit->GetNDF() << endl;
@@ -427,18 +484,20 @@ TF1 *MoReWebAlgorithm(TString rootfile, TString Source, int actualCurrent, doubl
 	histo->SetStats(0);
 	histo->SetLineColor(1);
 	histo->Draw();			
-				
+	
+	
 	intdir = chdir("../results/");
-	const char * outputtitle;
-	outputtitle = new char[250];
-	outputtitle = "Analysis-MoReWebFit.txt";
+	Char_t *outputtitle = Form("C%i-Analysis-MoReWebFit.txt", chipnr);
+	//outputtitle = new char[250];
+	//outputtitle = "Analysis-MoReWebFit.txt";
 	//Save data in .txt
 	std::ifstream FileTest(outputtitle);
 	if(!FileTest) {
 		//Write header in output document
 		ofstream outputfile;
 		outputfile.open(outputtitle, ios::out);
-		outputfile << "//Output from main.cc, Automatisierte Spektrenauswertung mit MoReWeb Algorithmus\n";
+		outputfile << "//Output from main.cc, Automatisierte Spektrenauswertung mit MoReWeb Algorithmus fuer chip ";
+		outputfile << chipnr << "\n";
 		outputfile << "//Source\tTemperature\t Current (mA)\tPeak (Vcal)\tErrorPeak (Vcal)\t#electrons(expected)\tFile\n";
 		outputfile.close();
 	}
@@ -450,27 +509,32 @@ TF1 *MoReWebAlgorithm(TString rootfile, TString Source, int actualCurrent, doubl
 	maxpeak = myfit->GetParameter(3);
 	maxpeakerror = myfit->GetParError(3);
 	
-	//Save measurement as .txt
-	ofstream outputfile;
-	outputfile.open(outputtitle, ios::out | ios::app);
-	outputfile << Source.Data() << "\t" << temp << "\t" << actualCurrent << "\t" << maxpeak << "\t" << maxpeakerror << "\t" << lit << "\t"; 
-	outputfile << rootfile.Data() << "\n";
-	outputfile.close();
-	if(intdir == 0) {} 	//this line is only to get rid of the warning, that intdir is initialized but not used
+//	if(strstr(Source, "Nd") == NULL) {	//Save measurement in txt file only if it is not Nd, as MoReWeb fit for Nd is at the moment bad (not to use for calibration line)
+		//Save measurement as .txt
+		ofstream outputfile;
+		outputfile.open(outputtitle, ios::out | ios::app);
+		outputfile << Source.Data() << "\t" << temp << "\t" << actualCurrent << "\t" << maxpeak << "\t" << maxpeakerror << "\t" << lit << "\t"; 
+		outputfile << rootfile.Data() << "\n";
+		outputfile.close();
+		if(intdir == 0) {} 	//this line is only to get rid of the warning, that intdir is initialized but not used
+//	}
 	
 	//Save measurement as .root
 	TString Substring;
 	Substring = TString(rootfile(0, rootfile.Length()-5));
-	Char_t * outputhisto = Form("%s-Histo-MoReWeb", Substring.Data());
-	Char_t * outputhistodelete = Form("%s-Histo-MoReWeb;1", Substring.Data());
-	TFile *savehisto = new TFile("Analysis-GaussFit.root", "UPDATE");
+	Char_t * outputhisto = Form("%s-%s-Histo-MoReWeb", Substring.Data(), histoname);
+	Char_t * outputhistodelete = Form("%s-%s-Histo-MoReWeb;1", Substring.Data(), histoname);
+	TFile *savehisto = new TFile("Analysis-GaussFit-MoReWebFit.root", "UPDATE");
 	savehisto->Delete(outputhistodelete);
 	histo->Write(outputhisto);
-	Char_t * outputfit = Form("%s-MoReWebAlgorithm", Substring.Data());
-	Char_t * outputfitdelete = Form("%s-MoReWebAlgorithm;1", Substring.Data());
+	Char_t * outputfit = Form("%s-%s-MoReWebAlgorithm", Substring.Data(), histoname);
+	Char_t * outputfitdelete = Form("%s-%s-MoReWebAlgorithm;1", Substring.Data(), histoname);
 	savehisto->Delete(outputfitdelete);
 	myfit->Write(outputfit);
 	savehisto->Close();
+	savehisto->Delete();
+	
+	intdir = chdir("../");
 	
     return myfit;
 	
@@ -523,7 +587,7 @@ TF1 * FitGaus(TH1 * histo, double initguess, double xmin, double xmax) {
 //--------------------------------------------------------------------------------------------------------------------
 
 //Definition of the function for importing and analysing the spectra with single Gaussian peak
-TH1 *getTH1(TString rootfile, TString Source, int actualCurrent, double peak, double leftborder, double rightborder, int fitBorder, const char * temp){	
+TH1 *getTH1(TString rootfile, TString Source, int actualCurrent, double peak, double leftborder, double rightborder, int fitBorder, const char * temp, int chipnr, bool module, bool maxbinbool){	
 	
 	int intdir = chdir("out");
 	char pfad[256];
@@ -537,7 +601,7 @@ TH1 *getTH1(TString rootfile, TString Source, int actualCurrent, double peak, do
 	double maxpeak, maxpeakerror; 
 	int nrEntries, nrTrigger;
 	
-	Char_t *histoname = Form("q_%s_C0_V0",Source.Data());	//Build name of histogram with Source
+	Char_t *histoname = Form("q_%s_C%i_V0",Source.Data(),chipnr);	//Build name of histogram with Source
 	cout << histoname << endl;
 
 	gDirectory->GetObject(histoname, hDummy);
@@ -556,22 +620,34 @@ TH1 *getTH1(TString rootfile, TString Source, int actualCurrent, double peak, do
 		//   axis->SetRangeUser(50,220);  
 		//   axis->SetRangeUser(50,350);  
 		//	 axis->SetRangeUser(140,180);  	
-		axis->SetRangeUser(0,peak+100);
+		axis->SetRangeUser(0,peak+120);
 		
 		
 		const char * comment;
 		comment = new char[500];
+		comment = " ";
+		if(strstr(Source.Data(), "Nd") != NULL) {
+			axis->SetRangeUser(150, peak+120);
+		}
 		int maxbin = histo->GetMaximumBin();
-		if(maxbin > peak - 25 and maxbin < peak + 25) {
+		if(strstr(Source.Data(), "Nd") != NULL) {
+			//cout << "MAXBIN " << maxbin << endl << endl << endl;
+			axis->SetRangeUser(0,peak+120);
+		}
+		//~ if(maxbin > peak - 25 and maxbin < peak + 25) {
+			//~ leftborder = maxbin - fitBorder;
+			//~ rightborder = maxbin + fitBorder;
+			//~ comment = " ";
+		//~ }
+		//~ else{
+			//~ cout << "Fit aorund expected peak value and NOT maximum bin!" << endl;
+			//~ comment = "Fit around expected peak value and NOT maximum bin!";
+		//~ }
+		if(maxbinbool) {
 			leftborder = maxbin - fitBorder;
 			rightborder = maxbin + fitBorder;
-			comment = " ";
 		}
-		else{
-			cout << "Fit aorund expected peak value and NOT maximum bin!" << endl;
-			comment = "Fit around expected peak value and NOT maximum bin!";
-		}
-						
+		
 		//Begin Fit
 		histo->Fit("gaus","L","",leftborder,rightborder);
 		TF1 *Fit = histo->GetFunction("gaus");
@@ -583,20 +659,22 @@ TH1 *getTH1(TString rootfile, TString Source, int actualCurrent, double peak, do
 		nrEntries = histo->GetEntries();						//Number of entries
 		nrTrigger = nrTriggers(rootfile, Source);				//Number of triggers
 		double lit = findsourcelit(Source);					//Expected number of electrons (NIST)
-		double rate = calculateRate(nrEntries, nrTrigger);		//Calculated rate: Rate = Hits / Trigger / 25 ns / 0,6561 cm² with zero masked pixels
+		double rate = calculateRate(nrEntries, nrTrigger, chipnr);		//Calculated rate: Rate = Hits / Trigger / 25 ns / 0,6561 cm² with zero masked pixels
 		
 		intdir = chdir("../results/");
-		const char * outputtitle;
-		outputtitle = new char[250];
-//		char outputtitle[250];
-		outputtitle = "Analysis-GaussFit.txt";
+		//const char * outputtitle;
+		//outputtitle = new char[250];
+		Char_t *outputtitle = Form("C%i-Analysis-GaussFit.txt", chipnr);
+		//	char outputtitle[250];
+		//outputtitle = "Analysis-GaussFit.txt";
 		//~ //Save data in .txt
 		std::ifstream FileTest(outputtitle);
 		if(!FileTest) {
 			//Write header in output document
 			ofstream outputfile;
 			outputfile.open(outputtitle, ios::out);
-			outputfile << "//Output from main.cc, Automatisierte Spektrenauswertung \n";
+			outputfile << "//Output from main.cc, Automatisierte Spektrenauswertung fuer chip ";
+			outputfile << chipnr << " \n";
 			outputfile << "//Source\tTemperature\t Current (mA)\tPeak (Vcal)\tErrorPeak (Vcal)\t#electrons(expected)\tLeftFitBorder\tRightFitBorder\t#Events\t#Triggers\tRate (Hz/cm^3)\tFile\tComment\n";
 			outputfile.close();
 		}
@@ -616,16 +694,17 @@ TH1 *getTH1(TString rootfile, TString Source, int actualCurrent, double peak, do
 		//Save measurement as .root
 		TString Substring;
 		Substring = TString(rootfile(0, rootfile.Length()-5));
-		Char_t * outputhisto = Form("%s-Histo", Substring.Data());
-		Char_t * outputhistodelete = Form("%s-Histo;1", Substring.Data());
-		TFile *savehisto = new TFile("Analysis-GaussFit.root", "UPDATE");
+		Char_t * outputhisto = Form("%s-%s-Histo", Substring.Data(), histoname);
+		Char_t * outputhistodelete = Form("%s-%s-Histo;1", Substring.Data(), histoname);
+		TFile *savehisto = new TFile("Analysis-GaussFit-MoReWebFit.root", "UPDATE");
 		savehisto->Delete(outputhistodelete);
 		histo->Write(outputhisto);
-		Char_t * outputfit = Form("%s-GaussFit", Substring.Data());
-		Char_t * outputfitdelete = Form("%s-GaussFit;1", Substring.Data());
+		Char_t * outputfit = Form("%s-%s-GaussFit", Substring.Data(), histoname);
+		Char_t * outputfitdelete = Form("%s-%s-GaussFit;1", Substring.Data(), histoname);
 		savehisto->Delete(outputfitdelete);
 		Fit->Write(outputfit);
 		savehisto->Close();
+		savehisto->Delete();
 		
 		//~ cout << "Single Gaussian Chi Quadrat " << endl;
 		//~ cout << "Chi Quadrat " << Fit->GetChisquare()/Fit->GetNDF() << endl;
@@ -649,40 +728,77 @@ TH1 *getTH1(TString rootfile, TString Source, int actualCurrent, double peak, do
 //--------------------------------------------------------------------------------------------------------------------
 double * defaultPeakPosition(TString Source, int fitBorder) {
 	
+	const char * GETCWD;
+	char pfad[256];
+	GETCWD = getcwd(pfad, 256);
+	if(GETCWD == NULL) {}
+	
+	//cout << "----------------------------------------------------------------------------------------------------------------------------" << endl;
+	//cout << "Pfad defaultPeakPosition " << pfad << endl << endl;
+	
 	double * defaultParameter;
 	defaultParameter = new double[3];	//[0] = position of peak, [1] = left fit border, [2] = right fit border
-	if(strstr(Source.Data(), "Fe") != NULL) {
-		defaultParameter[0] = 50;	//+-25 cause of variations between the used single chip assemblies
+	//Read in defaultPeakPostions and fitBorders from file Peakpositions.txt
+	const char *datafile;
+	datafile = new char[256];
+	datafile = "Peakpositions.txt";
+	fstream fc;
+	fc.open(datafile, ios::in);
+	char linecont[500];
+	fc.getline(linecont, 500);
+	fc.getline(linecont, 500);
+	
+	if(fc.is_open()) {
+		cout << "READ TXT FILE" << endl << endl;
+		char * readsource;
+		readsource = new char[5];
+		int peakposition = 0;
+		while(fc >> readsource) {
+			if(strstr(Source.Data(), readsource) != NULL) {
+				fc >> peakposition >> fitBorder;
+				defaultParameter[0] = peakposition;
+				fc.getline(linecont, 500);
+				cout << "FitBorder " << fitBorder << endl;
+			}
+		}
 	}
-	if(strstr(Source.Data(), "Cu") != NULL) {
-		defaultParameter[0] = 55;	//+-25 cause of variations between the used single chip assemblies
-	}
-	if(strstr(Source.Data(), "Zn") != NULL) {
-		defaultParameter[0] = 59;	//+-25 cause of variations between the used single chip assemblies
-	}
-	if(strstr(Source.Data(), "Mo") != NULL) {
-		defaultParameter[0] = 114;	//+-25 cause of variations between the used single chip assemblies
-	}
-	if(strstr(Source.Data(), "Ag") != NULL) {
-		defaultParameter[0] = 146;	//+-25 cause of variations between the used single chip assemblies
-	}
-	if(strstr(Source.Data(), "In") != NULL) {
-		defaultParameter[0] = 160;	//+-25 cause of variations between the used single chip assemblies
-	}
-	if(strstr(Source.Data(), "Sn") != NULL) {
-		defaultParameter[0] = 167;	//+-25 cause of variations between the used single chip assemblies
-	}
-	if(strstr(Source.Data(), "Nd") != NULL) {
-		defaultParameter[0] = 220;	//+-25 cause of variations between the used single chip assemblies
+	else {
+		cout << "Couldn't read txt file" << endl << endl;
+		if(strstr(Source.Data(), "Fe") != NULL) {
+			defaultParameter[0] = 50;	//+-25 cause of variations between the used single chip assemblies
+		}
+		if(strstr(Source.Data(), "Cu") != NULL) {
+			defaultParameter[0] = 55;	//+-25 cause of variations between the used single chip assemblies
+		}
+		if(strstr(Source.Data(), "Zn") != NULL) {
+			defaultParameter[0] = 59;	//+-25 cause of variations between the used single chip assemblies
+		}
+		if(strstr(Source.Data(), "Mo") != NULL) {
+			defaultParameter[0] = 114;	//+-25 cause of variations between the used single chip assemblies
+		}
+		if(strstr(Source.Data(), "Ag") != NULL) {
+			defaultParameter[0] = 146;	//+-25 cause of variations between the used single chip assemblies
+		}
+		if(strstr(Source.Data(), "In") != NULL) {
+			defaultParameter[0] = 160;	//+-25 cause of variations between the used single chip assemblies
+		}
+		if(strstr(Source.Data(), "Sn") != NULL) {
+			defaultParameter[0] = 167;	//+-25 cause of variations between the used single chip assemblies
+		}
+		if(strstr(Source.Data(), "Nd") != NULL) {
+			defaultParameter[0] = 220;	//+-25 cause of variations between the used single chip assemblies
+		}
+		//~ if(strstr(Source.Data(), "Nd") != NULL) {
+			//~ if(fitBorder != 20) {
+				//~ defaultParameter[1] = defaultParameter[0] - fitBorder - 10;
+				//~ defaultParameter[2] = defaultParameter[0] + fitBorder + 10;
+			//~ }
 	}
 	defaultParameter[1] = defaultParameter[0] - fitBorder;
 	defaultParameter[2] = defaultParameter[0] + fitBorder;
-	if(strstr(Source.Data(), "Nd") != NULL) {
-		if(fitBorder != 20) {
-			defaultParameter[1] = defaultParameter[0] - fitBorder - 10;
-			defaultParameter[2] = defaultParameter[0] + fitBorder + 10;
-		}
-	}
+	//cout << "leftBegin " << defaultParameter[1] << endl;
+	
+	//cout << "----------------------------------------------------------------------------------------------------------------------------" << endl;
 	
 	return defaultParameter;
 }
@@ -777,7 +893,7 @@ double pixelSurface(char * keyword, int col, int row) {
 }
 
 //--------------------------------------------------------------------------------------------------------------------
-double calculateRate(int nrEntries, int nrTrigger) {
+double calculateRate(int nrEntries, int nrTrigger, int chipnr) {
 	
 	fstream fin;
 	fin.open("defaultMaskFile.dat", ios::in);
@@ -788,6 +904,7 @@ double calculateRate(int nrEntries, int nrTrigger) {
 	while(fin >> keyword) {
 		if(strstr(keyword, "#") != NULL) {
 			fin.getline(linecont, 256);
+			rocNr = -1;
 		}
 		else {
 			fin >> rocNr;
@@ -807,7 +924,9 @@ double calculateRate(int nrEntries, int nrTrigger) {
 			}
 			fin.getline(linecont, 256);
 		}
-		SURFACEcm3 = SURFACEcm3 - pixelSurface(keyword, col, row);
+		if(rocNr == chipnr) {
+			SURFACEcm3 = SURFACEcm3 - pixelSurface(keyword, col, row);
+		}
 	}
 	fin.close();
 	

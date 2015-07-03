@@ -25,7 +25,7 @@ int nrTriggers(TString, TString);
 double findsourcelit(TString);
 void deleteLinesTxt(const char*, TString);
 double pixelSurface(char*, int, int);
-double calculateRate(int, int);
+double calculateRate(int, int, int);
 double ChiSquare(TH1* histo, TF1*Fit, double leftborder, double rightborder);
 
 
@@ -659,7 +659,7 @@ TH1 *getTH1(TString rootfile, TString Source, int actualCurrent, double peak, do
 		nrEntries = histo->GetEntries();						//Number of entries
 		nrTrigger = nrTriggers(rootfile, Source);				//Number of triggers
 		double lit = findsourcelit(Source);					//Expected number of electrons (NIST)
-		double rate = calculateRate(nrEntries, nrTrigger);		//Calculated rate: Rate = Hits / Trigger / 25 ns / 0,6561 cm² with zero masked pixels
+		double rate = calculateRate(nrEntries, nrTrigger, chipnr);		//Calculated rate: Rate = Hits / Trigger / 25 ns / 0,6561 cm² with zero masked pixels
 		
 		intdir = chdir("../results/");
 		//const char * outputtitle;
@@ -893,7 +893,7 @@ double pixelSurface(char * keyword, int col, int row) {
 }
 
 //--------------------------------------------------------------------------------------------------------------------
-double calculateRate(int nrEntries, int nrTrigger) {
+double calculateRate(int nrEntries, int nrTrigger, int chipnr) {
 	
 	fstream fin;
 	fin.open("defaultMaskFile.dat", ios::in);
@@ -904,6 +904,7 @@ double calculateRate(int nrEntries, int nrTrigger) {
 	while(fin >> keyword) {
 		if(strstr(keyword, "#") != NULL) {
 			fin.getline(linecont, 256);
+			rocNr = -1;
 		}
 		else {
 			fin >> rocNr;
@@ -923,7 +924,9 @@ double calculateRate(int nrEntries, int nrTrigger) {
 			}
 			fin.getline(linecont, 256);
 		}
-		SURFACEcm3 = SURFACEcm3 - pixelSurface(keyword, col, row);
+		if(rocNr == chipnr) {
+			SURFACEcm3 = SURFACEcm3 - pixelSurface(keyword, col, row);
+		}
 	}
 	fin.close();
 	

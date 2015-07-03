@@ -15,13 +15,13 @@ GLIBS		= $(ROOTGLIBS)
 
 #########################
 
-all: CurrentDependency
+all: FitGaussDistribution
 
-CurrentDependency.o : CurrentDependency.cc
-	$(CC) $(CCFLAGS) -c CurrentDependency.cc -o CurrentDependency.o
+FitGaussDistribution.o : FitGaussDistribution.cc
+	$(CC) $(CCFLAGS) -c FitGaussDistribution.cc -o FitGaussDistribution.o
 
-CurrentDependency : CurrentDependency.o
-	$(LD) CurrentDependency.o $(LDFLAGS) $(GLIBS) -o CurrentDependency
+FitGaussDistribution : FitGaussDistribution.o
+	$(LD) FitGaussDistribution.o $(LDFLAGS) $(GLIBS) -o FitGaussDistribution
 
 clean:
 	rm *.o

@@ -44,6 +44,24 @@ int main( int argc, char *argv[] ){
 	double ylimitup = 250;
 	double ylimitdown = 0;
 	
+	//DEFINITION OF OPTIONS
+	const char * temp;
+	temp = new char[5];
+	temp = "p20";
+	bool module = false;
+	long roc = 0;
+	bool rocbool = false;
+	bool legbool = false;
+	legtitle = "";
+	
+	for(int i = 1; i < argc; i++) {
+		if(strstr(argv[i], "-temp") != NULL) { temp = argv[i+1]; }		//Set temperature, standard: "p20"
+		if(strstr(argv[i], "-m") != NULL) { module = true; }			//Set module, standard: false
+		if(strstr(argv[i], "-roc") != NULL) { roc = int(strtol(argv[i+1], NULL, 0)); rocbool = true; }
+		if(strstr(argv[i], "-l") != NULL) { legtitle = argv[i+1]; legbool = true; }
+	}
+	if (legtitle.Contains(":")) legtitle.ReplaceAll(":"," ");
+	
 	
 	TString * availableTargets;
 	availableTargets = new TString[n];
@@ -56,40 +74,83 @@ int main( int argc, char *argv[] ){
 	availableTargets[6] = "Sn";
 	availableTargets[7] = "Nd";
 	
-	if(argc == 2) {
-		legtitle.Form("%s", argv[1]);
-		if (legtitle.Contains(":")) legtitle.ReplaceAll(":"," ");
-		//cout << legtitle << endl;
-	}
-	else {
-		legtitle = "";
-	}
+	//~ if(argc == 2) {
+		//~ legtitle.Form("%s", argv[1]);
+		//~ if (legtitle.Contains(":")) legtitle.ReplaceAll(":"," ");
+		//~ //cout << legtitle << endl;
+	//~ }
+	//~ else {
+		//~ legtitle = "";
+	//~ }
 	
-	//Analyse single gauss fit data
+	
+	// Current dependency line with single gaussian fit
 	const char *datafile;
 	datafile = new char[256];
-	datafile = "results/Analysis-GaussFit.txt";
-	readin(data_x, data_y, availableTargets, datafile);
-	//~ for(int i = 0; i < n; i++) {
-		//~ cout << data_x[i][0] << " " << data_y[i][0] << endl;
-	//~ }
-	int testdir = chdir("results/");
-	if(testdir == 1) {}
-	remove(outputtxt);
-	testdir = chdir("../");
-	PlotGraph(data_x, data_y, n, availableTargets, legtitle, outputtxt, ylimitup, ylimitdown, outputpdf);
+	int chipnr = 0;
+	int nrchips = 1;
+	if(module) {
+		nrchips = 16;
+	}
+	if(rocbool) {
+		chipnr = roc;
+		nrchips = roc+1;
+	}
+	const char * outputtxtakt;
+	outputtxtakt = new char[256];
+	const char * outputtxtakt2;
+	outputtxtakt2 = new char[256];
+	TString outputpdfakt;
+	TString outputpdfakt2;	
 	
-	//Analyse MoReWeb fit
-	datafile = "results/Analysis-MoReWebFit.txt";
-	vector <double> *dataMW_x, *dataMW_y;
-	dataMW_x = new vector <double>[n];
-	dataMW_y = new vector <double>[n];
-	readin(dataMW_x, dataMW_y, availableTargets, datafile);
-	testdir = chdir("results/");
-	remove(outputtxt2);
-	testdir = chdir("../");
-	legtitle.Append(" - MWeb");
-	PlotGraph(dataMW_x, dataMW_y, n, availableTargets, legtitle, outputtxt2, ylimitup, ylimitdown, outputpdf2);
+	
+	for(; chipnr < nrchips; chipnr++) {
+		legtitle.Append(Form(" - C%i", chipnr));
+		datafile = Form("results/C%i-Analysis-GaussFit.txt", chipnr);
+		//datafile = "results/Analysis-GaussFit.txt";
+		readin(data_x, data_y, availableTargets, datafile);
+		//~ for(int i = 0; i < n; i++) {
+			//~ cout << data_x[i][0] << " " << data_y[i][0] << endl;
+		//~ }
+		int testdir = chdir("results/");
+		if(testdir == 1) {}
+		outputtxtakt = Form("C%i-%s", chipnr, outputtxt);
+		outputtxtakt2 = Form("C%i-%s", chipnr, outputtxt2);
+		remove(outputtxtakt);
+		testdir = chdir("../");
+		outputpdf.Form("results/C%i-CurrentDependency", chipnr);
+		outputpdf2.Form("results/C%i-CurrentDependency-MoReWeb", chipnr);
+		PlotGraph(data_x, data_y, n, availableTargets, legtitle, outputtxtakt, ylimitup, ylimitdown, outputpdf);
+		for(int i = 0; i < n; i++) {
+			data_x[i].clear();
+			data_y[i].clear();
+		}
+		
+		//Analyse MoReWeb fit
+		datafile = Form("results/C%i-Analysis-MoReWebFit.txt", chipnr);
+		//datafile = "results/Analysis-MoReWebFit.txt";
+		vector <double> *dataMW_x, *dataMW_y;
+		dataMW_x = new vector <double>[n];
+		dataMW_y = new vector <double>[n];
+		readin(dataMW_x, dataMW_y, availableTargets, datafile);
+		testdir = chdir("results/");
+		remove(outputtxtakt2);
+		testdir = chdir("../");
+		legtitle.Append(" - MWeb");
+		PlotGraph(dataMW_x, dataMW_y, n, availableTargets, legtitle, outputtxtakt2, ylimitup, ylimitdown, outputpdf2);
+		legtitle = TString(legtitle(0,legtitle.Length()-7));
+		for(int i = 0; i < n; i++) {
+			dataMW_x[i].clear();
+			dataMW_y[i].clear();
+		}
+		if(chipnr < 10) {
+			legtitle = TString(legtitle(0, legtitle.Length()-5));
+		}
+		else {
+			legtitle = TString(legtitle(0, legtitle.Length()-6));
+		}
+		
+	}
 	
 	return 0;
 }

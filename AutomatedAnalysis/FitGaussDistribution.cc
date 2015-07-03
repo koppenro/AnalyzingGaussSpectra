@@ -51,7 +51,7 @@ int main( int argc, char *argv[] ){
 	int fitPeak = 0;
 	int currentBegin = 2;
 	int currentEnd = 30;
-	int currentStep = 4;
+	int currentStep = 2;
 	bool fitBorderbool = false;
 	bool fitPeakbool = false;
 	long roc = 0;
@@ -85,6 +85,8 @@ int main( int argc, char *argv[] ){
 		Currents[i] = currentBegin + currentStep*i;
 		CurrentString[i] = Form("_%imA", Currents[i]);
 	}
+	//Currents[numberofcurrents] = 20;
+	//CurrentString[numberofcurrents] = Form("_%imA", Currents[numberofcurrents]);
 	//Variables to determine Source
 	const int numbersources = 8;
     TString *Sources;
@@ -347,8 +349,10 @@ TF1 *MoReWebAlgorithm(TString rootfile, TString Source, int actualCurrent, doubl
 	TAxis *axis = histo->GetXaxis();
 	//   axis->SetRangeUser(50,220);  
 	//   axis->SetRangeUser(50,350);  
-	axis->SetRangeUser(0,350);  	
-	
+	axis->SetRangeUser(0,350);
+	if(strstr(Source.Data(), "Nd") != NULL) {
+	    axis->SetRangeUser(150,350);
+	}
 	//const char * comment;
 	//comment = new char[500];
 	//First Gaussian fit around the expectation
@@ -505,7 +509,7 @@ TF1 *MoReWebAlgorithm(TString rootfile, TString Source, int actualCurrent, doubl
 	maxpeak = myfit->GetParameter(3);
 	maxpeakerror = myfit->GetParError(3);
 	
-	if(strstr(Source, "Nd") == NULL) {	//Save measurement in txt file only if it is not Nd, as MoReWeb fit for Nd is at the moment bad (not to use for calibration line)
+//	if(strstr(Source, "Nd") == NULL) {	//Save measurement in txt file only if it is not Nd, as MoReWeb fit for Nd is at the moment bad (not to use for calibration line)
 		//Save measurement as .txt
 		ofstream outputfile;
 		outputfile.open(outputtitle, ios::out | ios::app);
@@ -513,7 +517,7 @@ TF1 *MoReWebAlgorithm(TString rootfile, TString Source, int actualCurrent, doubl
 		outputfile << rootfile.Data() << "\n";
 		outputfile.close();
 		if(intdir == 0) {} 	//this line is only to get rid of the warning, that intdir is initialized but not used
-	}
+//	}
 	
 	//Save measurement as .root
 	TString Substring;

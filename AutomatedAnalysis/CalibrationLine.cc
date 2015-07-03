@@ -62,15 +62,15 @@ int main( int argc, char *argv[] ){
 	
 	int * availableCurrents;
 	availableCurrents = new int[n];
-	for(int i = 0; i < n; i++) {
-		availableCurrents[i] = 2+4*i;
-	}
-	//~ availableCurrents[0] = 2;
-	//~ availableCurrents[1] = 6;
-	//~ availableCurrents[2] = 10;
-	//~ availableCurrents[3] = 20;
-	//~ availableCurrents[4] = 30;
-	//~ 
+	//~ for(int i = 0; i < n; i++) {
+		//~ availableCurrents[i] = 2+4*i;
+	//~ }
+	availableCurrents[0] = 2;
+	availableCurrents[1] = 6;
+	availableCurrents[2] = 10;
+	availableCurrents[3] = 20;
+	availableCurrents[4] = 30;
+	
 	//if(argc == 2) {
 	//	legtitle.Form("%s", argv[1]);
 	//	

@@ -339,7 +339,7 @@ TF1 *MoReWebAlgorithm(TString rootfile, TString Source, int actualCurrent, doubl
 		histo->GetYaxis()->SetTitleSize(0.05);
 		histo->GetYaxis()->SetTitle("# Events");
 		histo->GetXaxis()->SetTitleSize(0.05);
-		histo->GetXaxis()->SetTitle("VcalDAC");
+		histo->GetXaxis()->SetTitle("Q (Vcal)");
 	}
 	else {
 		cout << "Histogrammname ueberpruefen" << endl;
@@ -613,7 +613,7 @@ TH1 *getTH1(TString rootfile, TString Source, int actualCurrent, double peak, do
 		histo->GetYaxis()->SetTitleSize(0.05);
 		histo->GetYaxis()->SetTitle("# Events");
 		histo->GetXaxis()->SetTitleSize(0.05);
-		histo->GetXaxis()->SetTitle("VcalDAC");
+		histo->GetXaxis()->SetTitle("Q (Vcal)");
 	
 		//zooming the x-axis
 		TAxis *axis = histo->GetXaxis();

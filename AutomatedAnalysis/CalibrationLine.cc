@@ -19,7 +19,7 @@ using namespace std;
 
 int findCurrentPlace(int, int*);
 void readin(vector <double> *, vector <double> *, int *, const char *);
-void PlotGraph(vector <double> *, vector <double> *, const int, int *, TString, const char *, TString);
+void PlotGraph(vector <double> *, vector <double> *, const int, int *, TString, const char *, TString, int);
 
 
 int main( int argc, char *argv[] ){
@@ -118,7 +118,7 @@ int main( int argc, char *argv[] ){
 		testdir = chdir("../");
 		outputpdf.Form("results/C%i-CalibrationLine", chipnr);
 		outputpdf2.Form("results/C%i-CalibrationLine-MoReWeb", chipnr);
-		PlotGraph(data_x, data_y, n, availableCurrents, legtitle, outputtxtakt, outputpdf);
+		PlotGraph(data_x, data_y, n, availableCurrents, legtitle, outputtxtakt, outputpdf, chipnr);
 		for(int i = 0; i < n; i++) {
 			data_x[i].clear();
 			data_y[i].clear();
@@ -135,7 +135,7 @@ int main( int argc, char *argv[] ){
 		remove(outputtxtakt2);
 		testdir = chdir("../");
 		legtitle.Append(" - MWeb");
-		PlotGraph(dataMW_x, dataMW_y, n, availableCurrents, legtitle, outputtxtakt2, outputpdf2);
+		PlotGraph(dataMW_x, dataMW_y, n, availableCurrents, legtitle, outputtxtakt2, outputpdf2, chipnr);
 		legtitle = TString(legtitle(0,legtitle.Length()-7));
 		for(int i = 0; i < n; i++) {
 			dataMW_x[i].clear();
@@ -202,11 +202,11 @@ void readin(vector <double> *data_x, vector <double> *data_y, int * availableCur
 	}
 }
 
-void PlotGraph(vector <double> *data_x, vector <double> *data_y, const int n, int * availableCurrents, TString legtitle, const char * outputtxt, TString outputpdf) {
+void PlotGraph(vector <double> *data_x, vector <double> *data_y, const int n, int * availableCurrents, TString legtitle, const char * outputtxt, TString outputpdf, int chipnr) {
 	
 	const char *xtitle, *ytitle;
 	int *n_size;
-	double *p1, *p0, *p0err, *p1err; 
+	double *p1, *p0, *p0err, *p1err, *chisquare; 
 	
 	TString *legentry;
 	TGraph **graph;
@@ -231,6 +231,7 @@ void PlotGraph(vector <double> *data_x, vector <double> *data_y, const int n, in
 	graph = new TGraph*[n];
 	xtitle = new char[256];
 	ytitle = new char[256];
+	chisquare = new double[n];
 	
 
 	if(legtitle != "") {
@@ -297,6 +298,7 @@ void PlotGraph(vector <double> *data_x, vector <double> *data_y, const int n, in
 		    p0err[i]=p1fit->GetParError(0);
 		    p1[i]=p1fit->GetParameter(1);
 		    p1err[i]=p1fit->GetParError(1);
+		    chisquare[i]=p1fit->GetChisquare()/p1fit->GetNDF();
 		    
 		    //Save data in txt file
 			int testdir = chdir("results/");
@@ -309,21 +311,23 @@ void PlotGraph(vector <double> *data_x, vector <double> *data_y, const int n, in
 				outputfile.open(outputtxt, ios::out);
 				outputfile << "//Linear fit (p0 +- p0err) + (p1 +- p1err)*x with parameters \n";
 				outputfile << legtitle << "\n";
+				outputfile << "Chipnr\tp0\tp0err\tp1\tp1err\tchisquare/ndf\tLegend\n";
 				outputfile.close();
 			}
 			ofstream test;
 			test.open(outputtxt, ios::out | ios::app);
-			test << "------------------------------------------------\n";
-			test << legentry[i];
-			test << "\n";
-			test << p0[i];
-			test << "\t+-\t";
-			test << p0err[i];
-			test << "\n";
-			test << p1[i];
-			test << "\t+-\t";
-			test << p1err[i];
-			test << "\n";
+			//~ test << "------------------------------------------------\n";
+			//~ test << legentry[i];
+			//~ test << "\n";
+			//~ test << p0[i];
+			//~ test << "\t+-\t";
+			//~ test << p0err[i];
+			//~ test << "\n";
+			//~ test << p1[i];
+			//~ test << "\t+-\t";
+			//~ test << p1err[i];
+			//~ test << "\n";
+			test << chipnr << "\t" << p0[i] << "\t" << p0err[i] << "\t" << p1[i] << "\t" << p1err[i] << "\t" << chisquare[i] << "\t" << legentry[i] << "\n";
 			test.close();
 			testdir = chdir("../");
 		    

@@ -68,6 +68,11 @@ int main( int argc, char *argv[] ){
 	availableCurrents[0] = 2;
 	availableCurrents[1] = 6;
 	availableCurrents[2] = 10;
+	//~ availableCurrents[3] = 14;
+	//~ availableCurrents[4] = 18;
+	//~ availableCurrents[5] = 22;
+	//~ availableCurrents[6] = 26;
+	//~ availableCurrents[7] = 30;
 	availableCurrents[3] = 20;
 	availableCurrents[4] = 30;
 	

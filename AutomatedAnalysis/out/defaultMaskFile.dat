@@ -4,15 +4,9 @@
 # row 0 4
 # roc 0
 #
-col 0 0
-col 0 51
-row 0 79
-pix 0 43 65
-pix 0 47 51
-pix 0 44 43
-pix 0 50 74
-pix 0 50 73
-pix 0 49 56
-pix 0 49 41
-pix 0 49 2
-pix 0 24 18
+pix 4 43 42
+pix 4 51 42
+pix 6 45 72
+pix 12 50 31
+pix 12 42 37
+pix 13 26 37

@@ -209,7 +209,7 @@ void PlotGraph(vector <double> *data_x, vector <double> *data_y, const int n, TS
 	TF1 *p1fit;
 	fstream fc,df;  
 	
-	TLegend *leg = new TLegend(0.53,0.12,0.9,0.5);
+	TLegend *leg = new TLegend(0.1,0.1,0.9,0.6);
 	leg->SetFillStyle(1001);
 	leg->SetFillColor(0);
 	leg->SetTextSize(0.04);
@@ -356,6 +356,20 @@ void PlotGraph(vector <double> *data_x, vector <double> *data_y, const int n, TS
 	c1->SaveAs(outputpdf.Append("-woLegend.pdf"));
 	c1->SaveAs(outputpdf.ReplaceAll(".pdf",".png"));
 	
+	//c1->Clear();
+	//Plot legend in second pad right of graph
+	c1->Divide(2,1);
+	//Get the pads and set the size properly
+	TVirtualPad *pad1 = new TPad();
+	TVirtualPad *pad2 = new TPad();
+	pad1 = c1->GetPad(1);
+	pad2 = c1->GetPad(2);
+	pad1->SetPad(0,0,0.75,1);
+	pad2->SetPad(0.7,0,1,1);
+	c1->cd(1);
+	pad1->SetLeftMargin(0.14);
+	multi->Draw("AP");
+	c1->cd(2);	
 	leg->Draw();
 	//c1->SaveAs("results/CurrentDependency.pdf");
 	//c1->SaveAs("results/CurrentDependency.png");

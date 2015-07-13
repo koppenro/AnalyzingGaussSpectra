@@ -209,7 +209,7 @@ void PlotGraph(vector <double> *data_x, vector <double> *data_y, const int n, TS
 	TF1 *p1fit;
 	fstream fc,df;  
 	
-	TLegend *leg = new TLegend(0.1,0.1,0.9,0.6);
+	TLegend *leg = new TLegend(0.1,0.1,0.9,0.9);
 	leg->SetFillStyle(1001);
 	leg->SetFillColor(0);
 	leg->SetTextSize(0.04);

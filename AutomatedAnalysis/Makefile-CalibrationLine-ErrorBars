@@ -15,13 +15,13 @@ GLIBS		= $(ROOTGLIBS)
 
 #########################
 
-all: CurrentDependency
+all: CalibrationLine-ErrorBars
 
-CurrentDependency.o : CurrentDependency.cc
-	$(CC) $(CCFLAGS) -c CurrentDependency.cc -o CurrentDependency.o
+CalibrationLine-ErrorBars.o : CalibrationLine-ErrorBars.cc
+	$(CC) $(CCFLAGS) -c CalibrationLine-ErrorBars.cc -o CalibrationLine-ErrorBars.o
 
-CurrentDependency : CurrentDependency.o
-	$(LD) CurrentDependency.o $(LDFLAGS) $(GLIBS) -o CurrentDependency
+CalibrationLine-ErrorBars : CalibrationLine-ErrorBars.o
+	$(LD) CalibrationLine-ErrorBars.o $(LDFLAGS) $(GLIBS) -o CalibrationLine-ErrorBars
 
 clean:
 	rm *.o

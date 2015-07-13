@@ -232,8 +232,8 @@ void PlotGraph(vector <double> *data_x, vector <double> *data_y, const int n, TS
 		//cout << legtitle << endl;
 		leg->SetHeader(legtitle);
 	}
-	xtitle = "current ( mA )";
-	ytitle = "signal ( Vcal DAC )";
+	xtitle = "I (mA)";
+	ytitle = "Q (Vcal)";
 	
 	
 	TCanvas *c1 = new TCanvas("c1","PlotGraph",10,10,1500,1000); 
@@ -330,7 +330,7 @@ void PlotGraph(vector <double> *data_x, vector <double> *data_y, const int n, TS
 		    
 		    cout << " adding graph[" << i <<"]" << endl; 
 		    multi->Add(graph[i]);		    	    
-			legentry[i].Append(Form("; p1=%4.2f Vcal/mA",p1[i])); 	//http://www.cplusplus.com/reference/cstdio/printf/
+			legentry[i].Append(Form("; p1 = %4.2f Vcal/mA",p1[i])); 	//http://www.cplusplus.com/reference/cstdio/printf/
 			leg->AddEntry(graph[i],legentry[i],"LP");
 		    
 		    multi->SetMaximum(ylimitup);	//Set upper y Axis limit

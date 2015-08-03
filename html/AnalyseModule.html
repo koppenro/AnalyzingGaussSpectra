@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>C++/ROOT programs to analyze Xray spectra and do the energy calibration: EKP, KIT &mdash; Analysis Documentation 1.0 documentation</title>
+    <title>AnalyseModule.sh &mdash; Analysis Documentation 1.0 documentation</title>
     
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -23,8 +23,8 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="Analysis Documentation 1.0 documentation" href="#" />
-    <link rel="next" title="FitGaussDistribution" href="FitGaussDistribution.html" />
+    <link rel="top" title="Analysis Documentation 1.0 documentation" href="index.html" />
+    <link rel="prev" title="HistoCalibrationSlopes" href="HistoCalibrationSlopes.html" />
    
   
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
@@ -38,9 +38,9 @@
           <a href="genindex.html" title="General Index"
              accesskey="I">index</a></li>
         <li class="right" >
-          <a href="FitGaussDistribution.html" title="FitGaussDistribution"
-             accesskey="N">next</a> |</li>
-        <li class="nav-item nav-item-0"><a href="#">Analysis Documentation 1.0 documentation</a> &raquo;</li> 
+          <a href="HistoCalibrationSlopes.html" title="HistoCalibrationSlopes"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">Analysis Documentation 1.0 documentation</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -49,29 +49,11 @@
         <div class="bodywrapper">
           <div class="body" role="main">
             
-  <div class="section" id="c-root-programs-to-analyze-xray-spectra-and-do-the-energy-calibration-ekp-kit">
-<h1><strong>C++/ROOT programs to analyze Xray spectra and do the energy calibration: EKP, KIT</strong><a class="headerlink" href="#c-root-programs-to-analyze-xray-spectra-and-do-the-energy-calibration-ekp-kit" title="Permalink to this headline">¶</a></h1>
+  <div class="section" id="analysemodule-sh">
+<h1><strong>AnalyseModule.sh</strong><a class="headerlink" href="#analysemodule-sh" title="Permalink to this headline">¶</a></h1>
 <p><strong>Documentation</strong></p>
-<p>This documentation gives a short description of the programs used to analyze Xray spectra and doing the energy calibration of digital readout chips.
-FitGaussDistribution.cc is used to find the peak position of Xray spectra with two different algorithms.
-CalibrationLine-ErrorBars.cc plots the peak positions against the expected number of electrons of the targets and performs a linear fit for energy calibration.
-CurrentDependency.cc plots the peak positions against the used currents of the Xray tube and performs a linear fit to check the rate dependency of the read out chip.</p>
-<div class="toctree-wrapper compound">
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="FitGaussDistribution.html"><strong>FitGaussDistribution</strong></a><ul class="simple">
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="CalibrationLine-ErrorBars.html"><strong>CalibrationLine-ErrorBars</strong></a><ul class="simple">
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="CurrentDependency.html"><strong>CurrentDependency</strong></a><ul class="simple">
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="MakeTxt.html"><strong>MakeTxt</strong></a></li>
-<li class="toctree-l1"><a class="reference internal" href="HistoCalibrationSlopes.html"><strong>HistoCalibrationSlopes</strong></a></li>
-<li class="toctree-l1"><a class="reference internal" href="AnalyseModule.html"><strong>AnalyseModule.sh</strong></a></li>
-</ul>
-</div>
+<p>This documentation gives a short description of the functionality of the program &#8220;AnalyseModule.sh&#8221;.</p>
+<p>AnalyseModule.sh is a shell script which calls the functions &#8220;FitGaussDistribution&#8221;, &#8220;CalibrationLine&#8221; and &#8220;CurrentDependency&#8221; to analyse the measured data from a module.</p>
 </div>
 
 
@@ -80,13 +62,13 @@ CurrentDependency.cc plots the peak positions against the used currents of the X
       </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
         <div class="sphinxsidebarwrapper">
-  <h4>Next topic</h4>
-  <p class="topless"><a href="FitGaussDistribution.html"
-                        title="next chapter"><strong>FitGaussDistribution</strong></a></p>
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="HistoCalibrationSlopes.html"
+                        title="previous chapter"><strong>HistoCalibrationSlopes</strong></a></p>
   <div role="note" aria-label="source link">
     <h3>This Page</h3>
     <ul class="this-page-menu">
-      <li><a href="_sources/index.txt"
+      <li><a href="_sources/AnalyseModule.txt"
             rel="nofollow">Show Source</a></li>
     </ul>
    </div>
@@ -115,7 +97,7 @@ CurrentDependency.cc plots the peak positions against the used currents of the X
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.3</a>
       
       |
-      <a href="_sources/index.txt"
+      <a href="_sources/AnalyseModule.txt"
           rel="nofollow">Page source</a></li>
     </div>
 

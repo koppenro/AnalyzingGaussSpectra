@@ -1,0 +1,405 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>FitGaussDistribution &mdash; Analysis Documentation 1.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="Analysis Documentation 1.0 documentation" href="index.html" />
+    <link rel="next" title="CalibrationLine-ErrorBars" href="CalibrationLine-ErrorBars.html" />
+    <link rel="prev" title="C++/ROOT programs to analyze Xray spectra and do the energy calibration: EKP, KIT" href="index.html" />
+   
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="CalibrationLine-ErrorBars.html" title="CalibrationLine-ErrorBars"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="C++/ROOT programs to analyze Xray spectra and do the energy calibration: EKP, KIT"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">Analysis Documentation 1.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="fitgaussdistribution">
+<h1><strong>FitGaussDistribution</strong><a class="headerlink" href="#fitgaussdistribution" title="Permalink to this headline">¶</a></h1>
+<p><strong>Documentation</strong></p>
+<p>This documentation gives a short description of the functionality of the program &#8220;FitGaussDistribution.cc&#8221;.
+For details please take a look in the code.</p>
+<p>This program fits a Single Gaussian function and the function used by MoReWeb to Xray spectra saved in the subdirectory &#8220;out&#8221;.
+Options are:</p>
+<blockquote>
+<div><ul class="simple">
+<li>-temp $temperature: set temperature to $temperature, standard is &#8220;p20&#8221;</li>
+<li>-m: Xray spectra are measured with a module (spectra from all ROCs will be analyzed)</li>
+<li>-roc $ROCnumber: only spectra from ROC $ROCnumber will be analyzed</li>
+<li>-T $TrimValue: set trim value to $TrimValue in Vcal units, standard is &#8220;35&#8221;</li>
+<li>-s $searchOption: only histograms with $searchOption in the file name will be analyzed</li>
+<li>-fb $fitBorder: set borders of symmetrical fit intervall manually</li>
+<li>-fp $PeakPosition: set peak position manually</li>
+<li>-fm: perform Gaussian fit around the maximum bin of the histogram</li>
+<li>-c $currentBegin $currentEnd $currentStep: set all used currents, which can be found in the file names.</li>
+<li>-nc: no current specification in file name is used</li>
+</ul>
+</div></blockquote>
+<p>In the main program, the sources are defined and the functions are called to perform both fits (MoReWeb and SingleGauss).
+For further information, please take a look in the .cc code.</p>
+<div class="toctree-wrapper compound">
+<ul class="simple">
+</ul>
+</div>
+<dl class="function">
+<dt id="MoReWebAlgorithm">
+<code class="descname">MoReWebAlgorithm</code><span class="sig-paren">(</span><em>Rootfile</em>, <em>Source</em>, <em>Current</em>, <em>Peak</em>, <em>Temperature</em>, <em>ChipNr</em>, <em>module</em><span class="sig-paren">)</span><a class="headerlink" href="#MoReWebAlgorithm" title="Permalink to this definition">¶</a></dt>
+<dd><p>Use the MoReWebAlgorithm to fit a function to a Xray spectrum and save results</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>Rootfile</strong> &#8211; Xray spectrum (.root) which has to be analyzed</li>
+<li><strong>Source</strong> &#8211; Used Source in Xray spectrum</li>
+<li><strong>Current</strong> &#8211; Used Xray Current</li>
+<li><strong>Peak</strong> &#8211; initial guess for the peak position</li>
+<li><strong>Temperature</strong> &#8211; used temperature (e.g p20)</li>
+<li><strong>ChipNr</strong> &#8211; number of ROC which has to be analyzed</li>
+<li><strong>module</strong> &#8211; bool, which indicates if a module is analyzed or a single chip</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<ul class="simple">
+<li>Open <em>Rootfile</em> and find the Spectrum &#8220;q_$Source_C$ChipNr_V0&#8221; in the Subdirectory &#8220;Xray&#8221;</li>
+<li>Perform MoReWeb Algorithm: background fit and Gaussian fit for the whole spectrum (Algorithm see in .cc File)</li>
+<li>Draw results in already opened TCanvas (to save the drawing, open the TCanvas before using the function and save pictures afterwards)</li>
+<li>Save data in .txt file and .root file</li>
+</ul>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">myfit (TF1 function)</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="FitGaus">
+<code class="descname">FitGaus</code><span class="sig-paren">(</span><em>Histo</em>, <em>initguess</em>, <em>xmin</em>, <em>xmax</em><span class="sig-paren">)</span><a class="headerlink" href="#FitGaus" title="Permalink to this definition">¶</a></dt>
+<dd><p>Fit a Single Gaussian to a histogram</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>Histo</strong> &#8211; TH1 object, histogramm in which a Gaussian fit has to be done</li>
+<li><strong>initguess</strong> &#8211; inital guess about the peak position, if choosen negative, the mean of the histogramm is used</li>
+<li><strong>xmin</strong> &#8211; left fit border: is choosen as $initguess-40 if $initguess &gt; 0 and is left xmin if initguess &lt; 0</li>
+<li><strong>xmax</strong> &#8211; right fit border: is  choosen as $initguess+40 if $initguess &gt; 0 and is left xmax if initguess &lt; 0</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<ul class="simple">
+<li>choose fit border and initguess as described above</li>
+<li>perform a Gaussian fit with sigma of circa 10</li>
+</ul>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">fit (TF1 function)</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="getTH1">
+<code class="descname">getTH1</code><span class="sig-paren">(</span><em>Rootfile</em>, <em>Source</em>, <em>Current</em>, <em>Peak</em>, <em>Leftborder</em>, <em>Rightborder</em>, <em>fitBorder</em>, <em>Temperature</em>, <em>ChipNr</em>, <em>module</em>, <em>maxbinbool</em><span class="sig-paren">)</span><a class="headerlink" href="#getTH1" title="Permalink to this definition">¶</a></dt>
+<dd><p>Fit a Single Gaussian to a Xray spectrum and save results</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>Rootfile</strong> &#8211; Xray spectrum (.root) which has to be analyzed</li>
+<li><strong>Source</strong> &#8211; Used Source in Xray spectrum</li>
+<li><strong>Current</strong> &#8211; Used Xray current</li>
+<li><strong>Peak</strong> &#8211; inital guess for the peak position</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p>:param leftborder</p>
+<ul>
+<li><p class="first">Open $Rootfile and find the Spectrum &#8220;q_$Source_C$ChipNr_V0&#8221; in the Subdirectory &#8220;Xray&#8221;</p>
+</li>
+<li><dl class="first docutils">
+<dt>Perform Single Gaussian fit:</dt>
+<dd><p class="first last"><a href="#id1"><span class="problematic" id="id2">*</span></a>around maximum bin in histogramm, if $maxbinbool is true, borders are choosen $maxbin-$fitBorder and $maxbin+$fitBorder
+<a href="#id3"><span class="problematic" id="id4">*</span></a>around $Peak with borders $leftborder and $rightborder</p>
+</dd>
+</dl>
+</li>
+<li><p class="first">Save data in .txt file and .root file</p>
+</li>
+</ul>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">histo (TH1 histogram)</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="listofRootFiles">
+<code class="descname">listofRootFiles</code><span class="sig-paren">(</span><em>datadir</em>, <em>n</em>, <em>searchOption</em><span class="sig-paren">)</span><a class="headerlink" href="#listofRootFiles" title="Permalink to this definition">¶</a></dt>
+<dd><p>Find all .root files in the directory $datadir which include $searchOption in the file name and return a TString with the file names</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">RootFiles (TString)</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="identifySource">
+<code class="descname">identifySource</code><span class="sig-paren">(</span><em>Rootfile</em>, <em>Sources</em>, <em>numbersources</em><span class="sig-paren">)</span><a class="headerlink" href="#identifySource" title="Permalink to this definition">¶</a></dt>
+<dd><p>Find the used source of Xray spectrum out of filename and return source</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>Rootfile</strong> &#8211; filename</li>
+<li><strong>Sources</strong> &#8211; String of all available sources</li>
+<li><strong>numbersources</strong> &#8211; number of available sources</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">Source (TString)</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="identifyCurrent">
+<code class="descname">identifyCurrent</code><span class="sig-paren">(</span><em>Rootfile</em>, <em>CurrentString</em>, <em>Currents</em>, <em>numbercurrents</em><span class="sig-paren">)</span><a class="headerlink" href="#identifyCurrent" title="Permalink to this definition">¶</a></dt>
+<dd><p>Find the used current of Xray tube out of filename and return value</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>Rootfile</strong> &#8211; filename</li>
+<li><strong>CurrentString</strong> &#8211; String of all used currents</li>
+<li><strong>numbercurrents</strong> &#8211; number of available currents</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">current (int)</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="defaultPeakPosition">
+<code class="descname">defaultPeakPosition</code><span class="sig-paren">(</span><em>Source</em>, <em>fitBorder</em><span class="sig-paren">)</span><a class="headerlink" href="#defaultPeakPosition" title="Permalink to this definition">¶</a></dt>
+<dd><p>Find inital guess for peak positions of used sources out of .txt file or from hard coded values</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>Source</strong> &#8211; peak position of this source is determined</li>
+<li><strong>fitBorder</strong> &#8211; if no .txt file exists, fitBorders for e.g. Gaussian fit are calculated in the symmetrical interval $defaultposition-$fitBorder, $defaultposition+$fitBorder</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">defaultParameter (double array)</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="nrTriggers">
+<code class="descname">nrTriggers</code><span class="sig-paren">(</span><em>Rootfile</em>, <em>Source</em><span class="sig-paren">)</span><a class="headerlink" href="#nrTriggers" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read in number of triggers out of Xray spectrum</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">nrTrigger (int)</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="findsourcelit">
+<code class="descname">findsourcelit</code><span class="sig-paren">(</span><em>Source</em><span class="sig-paren">)</span><a class="headerlink" href="#findsourcelit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return expected number of electrons which are produced in a silicon sensor through K-alpha-Photons. Data from NIST</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">nrElectrons (double)</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="deleteLinesTxt">
+<code class="descname">deleteLinesTxt</code><span class="sig-paren">(</span><em>outputtitle</em>, <em>rootfile</em><span class="sig-paren">)</span><a class="headerlink" href="#deleteLinesTxt" title="Permalink to this definition">¶</a></dt>
+<dd><p>Delete lines in txt file $outputtitle, which include $rootfile. Multiple analysis of the same root file can be done and only the last result is saved in txt file.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">void</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="pixelSurface">
+<code class="descname">pixelSurface</code><span class="sig-paren">(</span><em>keyword</em>, <em>col</em>, <em>row</em><span class="sig-paren">)</span><a class="headerlink" href="#pixelSurface" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns pixelSurface of pixel in $col, $row on a ROC. Function can be used to read in lines from defaultMaskfile.dat, input in $keyword</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">pixelSurfacecm3 (double)</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="calculateRate">
+<code class="descname">calculateRate</code><span class="sig-paren">(</span><em>nrEntries</em>, <em>nrTrigger</em>, <em>chipnr</em><span class="sig-paren">)</span><a class="headerlink" href="#calculateRate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate rate of Xray radiation on the sensor.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>nrEntries</strong> &#8211; number of entries in Xray spectrum</li>
+<li><strong>nrTrigger</strong> &#8211; number of triggers</li>
+<li><strong>chipnr</strong> &#8211; number of ROC</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">rate (double)</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="index.html"
+                        title="previous chapter"><strong>C++/ROOT programs to analyze Xray spectra and do the energy calibration: EKP, KIT</strong></a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="CalibrationLine-ErrorBars.html"
+                        title="next chapter"><strong>CalibrationLine-ErrorBars</strong></a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/FitGaussDistribution.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2015, Roland Koppenhoefer.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.3</a>
+      
+      |
+      <a href="_sources/FitGaussDistribution.txt"
+          rel="nofollow">Page source</a></li>
+    </div>
+
+    
+
+    
+  </body>
+</html>

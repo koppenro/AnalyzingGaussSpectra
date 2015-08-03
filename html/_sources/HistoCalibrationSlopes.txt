@@ -1,0 +1,9 @@
+**HistoCalibrationSlopes**
+=====================================
+**Documentation**
+
+This documentation gives a short description of the functionality of the program "HistoCalibrationSlopes.cc".
+For details please take a look in the code. 
+
+This program creates a histogram with all calculated slopes of the calibration lines at 30mA Xray tube current. 
+The results of fitting a single Gaussian function and using the MoReWeb algorithm are compared. 

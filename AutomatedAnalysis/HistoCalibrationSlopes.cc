@@ -34,7 +34,8 @@ void HistoCalibrationSlopes(){
 	int measuredata[10];
 	double fitparameter[4];
 	
-	// !!!!!!!!!!!!!!!!!!!!!!! TO COMPLETE WITH DIRECTORY !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	
+	//To complete with directory!!!!!!!!!!!!!!!!!!!!!!
 	datadirectory = "";
 	int pixcol = 4;
 	int pixrow = 42;

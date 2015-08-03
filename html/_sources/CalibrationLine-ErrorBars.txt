@@ -1,0 +1,56 @@
+**CalibrationLine-ErrorBars**
+=====================================
+**Documentation**
+
+This documentation gives a short description of the functionality of the program "CalibrationLine-ErrorBars.cc".
+For details please take a look in the code. 
+
+The program will plot the peak positions of Xray spectra against the expected number of electrons produced in the silicon sensor. 
+Options are:
+   * -m: Xray spectra are measured with a module (results from all ROCs will be analyzed)
+   * -roc $ROCnumber: only results from ROC $ROCnumber will be analyzed
+   * -l $legendtitle: set legendtitle, standard is empty
+A linear fit is used and the slope are saved. 
+Results are saved as .png, .pdf and .txt
+
+.. toctree::
+   :maxdepth: 2
+
+.. function:: erroronElectrons(actualSource)
+
+   Return the error on the expected number of electrons produced in a silicon sensor. 
+   Data taken from NIST. 
+   
+   :param actualSource: Used source in the xray spectrum
+   :return: yerror (double)
+	
+.. function:: findCurrentPlace(current, availableCurrents)
+
+   Return a characteristic integer for each used current to fill the data at the right position in an array
+
+   :param current: current of the actual spectrum
+   :param availableCurrents: integer array with all used currents
+   :return: i (int)
+
+.. function:: readin(data_x, data_y, data_xerr, data_yerr, availableCurrents, txt, MoReWeb)
+
+   Read in data from files produced by FitGaussDistribution.cc.
+
+   :param data_x: array for peak positions
+   :param data_y: array for number of electrons produced in silicon sensor
+   :param data_xerr: error on peak positions. For Single Gaussian 1.5, for MoReWeb 1.2, set in this function
+   :param data_yerr: error on number of electrons
+   :return: void
+
+.. function:: PlotGraph(data_x, data_y, data_xerr, data_yerr, n , availableCurrents, legtitle, outputtxt, outputpdf, chipnr)
+
+   Plot the peak positions against the number of electrons with x and y error bars. 
+   Perform a linear fit. 
+   Results saved as .txt, .png and .pdf
+
+   :param data_x: array for peak positions
+   :param data_y: array for number of electrons produced in silicon sensor
+   :param data_xerr: error on peak positions
+   :param data_yerr: error on number of electrons
+   
+   :return: void

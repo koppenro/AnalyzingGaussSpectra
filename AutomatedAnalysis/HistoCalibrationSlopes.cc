@@ -35,8 +35,8 @@ void HistoCalibrationSlopes(){
 	double fitparameter[4];
 	
 	
-	//datadirectory = "/home/koppen/Bachelorarbeit/Messkampagne/CalibrationLine-Slopes-Analyse";
-	datadirectory = "/home/rk/Dokumente/Universitaet/Bachelorarbeit/Messkampagne/CalibrationLine-Slopes-Analyse";
+	//To complete with directory!!!!!!!!!!!!!!!!!!!!!!
+	datadirectory = "";
 	int pixcol = 4;
 	int pixrow = 42;
 	

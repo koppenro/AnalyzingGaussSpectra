@@ -1,0 +1,28 @@
+ROOTCFLAGS      = $(shell root-config --cflags)
+ROOTLIBS        = $(shell root-config --libs)
+ROOTGLIBS       = $(shell root-config --glibs)
+
+CC              = g++
+CCFLAGS         = -g -O -Wall
+CCSOFLAGS       = -shared -fPIC
+
+LD              = g++
+LDFLAGS         = -O
+
+CCFLAGS 	+= $(ROOTCFLAGS) # find header files
+LIBS		= $(ROOTLIBS) #librarys
+GLIBS		= $(ROOTGLIBS)
+
+#########################
+
+all: HistoCalibrationSlopes
+
+HistoCalibrationSlopes.o : HistoCalibrationSlopes.cc
+	$(CC) $(CCFLAGS) -c HistoCalibrationSlopes.cc -o HistoCalibrationSlopes.o
+
+HistoCalibrationSlopes : HistoCalibrationSlopes.o
+	$(LD) HistoCalibrationSlopes.o $(LDFLAGS) $(GLIBS) -o HistoCalibrationSlopes
+
+clean:
+	rm *.o
+	rm *~

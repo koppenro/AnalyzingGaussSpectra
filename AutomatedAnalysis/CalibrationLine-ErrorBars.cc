@@ -19,13 +19,13 @@
 using namespace std;
 
 int findCurrentPlace(int, int*);
-void readin(vector <double> *, vector <double> *, vector <double> *, vector <double> *, int *, const char *);
+void readin(vector <double> *, vector <double> *, vector <double> *, vector <double> *, int *, const char *, bool);
 void PlotGraph(vector <double> *, vector <double> *, vector <double> *, vector <double> *, const int, int *, TString, TString, TString, int);
 
 
 int main( int argc, char *argv[] ){
 	
-	const int n = 8;		//number of different currents 
+	const int n = 9;		//number of different currents 
 	vector <double> *data_x, *data_y, *data_xerr, *data_yerr;
 	data_x = new vector <double>[n];
 	data_y = new vector <double>[n];
@@ -50,6 +50,7 @@ int main( int argc, char *argv[] ){
 	long roc = 0;
 	bool rocbool = false;
 	bool legbool = false;
+	bool MoReWeb = false;
 	legtitle = "";
 	
 	for(int i = 1; i < argc; i++) {
@@ -67,13 +68,14 @@ int main( int argc, char *argv[] ){
 	availableCurrents[0] = 2;
 	availableCurrents[1] = 6;
 	availableCurrents[2] = 10;
-	//~ availableCurrents[3] = 14;
-	//~ availableCurrents[4] = 18;
-	//~ availableCurrents[5] = 22;
-	//~ availableCurrents[6] = 26;
-	//~ availableCurrents[7] = 30;
-	availableCurrents[3] = 20;
-	availableCurrents[4] = 30;
+	availableCurrents[3] = 14;
+	availableCurrents[4] = 18;
+	availableCurrents[5] = 22;
+	availableCurrents[6] = 26;
+	availableCurrents[7] = 30;
+	availableCurrents[8] = 20;
+	//~ availableCurrents[3] = 20;
+	//~ availableCurrents[4] = 30;
 	
 	// Calibration line with single gaussian fit
 	const char *datafile;
@@ -99,9 +101,9 @@ int main( int argc, char *argv[] ){
 	for(; chipnr < nrchips; chipnr++) {
 		//cout << "###################################################################" << endl;
 		
-		legtitle.Append(Form(" - C%i", chipnr));
+		legtitle.Append(Form(" - Auslesechip %i", chipnr));
 		datafile = Form("results/C%i-Analysis-GaussFit.txt", chipnr);
-		readin(data_x, data_y, data_xerr, data_yerr, availableCurrents, datafile);
+		readin(data_x, data_y, data_xerr, data_yerr, availableCurrents, datafile, MoReWeb);
 		//cout << data_x[1][0] << "\t" << data_xerr[1][0] << "\t" << data_y[1][0] << "\t" << data_yerr[1][0] << endl;
 		int testdir = chdir("results/");
 		if(testdir == 1) {}
@@ -126,9 +128,10 @@ int main( int argc, char *argv[] ){
 		dataMW_y = new vector <double>[n];
 		dataMW_xerr = new vector <double>[n];
 		dataMW_yerr = new vector <double>[n];
+		MoReWeb = true;
 		datafile = Form("results/C%i-Analysis-MoReWebFit.txt", chipnr);
 		//datafile = "results/Analysis-MoReWebFit.txt";
-		readin(dataMW_x, dataMW_y, dataMW_xerr, dataMW_yerr, availableCurrents, datafile);
+		readin(dataMW_x, dataMW_y, dataMW_xerr, dataMW_yerr, availableCurrents, datafile, MoReWeb);
 		testdir = chdir("results/");
 		//outputMoreWeb = Form("C%i-%s", chipnr, outputtxt2);
 		outputMoreWeb.Form("C%i-CalibrationLine-Slopes-MoReWeb-Errors.txt", chipnr);
@@ -170,6 +173,7 @@ int main( int argc, char *argv[] ){
 //#Definition of the functions                                                                                       #
 //####################################################################################################################
 
+//Return errors on number of electrons for each source (data from NIST)
 double erroronElectrons(TString actualSource) {
 	double yerror = -1;
 	//cout << actualSource << endl;
@@ -189,6 +193,7 @@ double erroronElectrons(TString actualSource) {
 	return(yerror);
 }
 
+//Return characteristic integer for each used current to fill the data at the right position in an array
 int findCurrentPlace( int current, int * availableCurrents ) {
 	int i = 0;
 	while( i < 8 ) {
@@ -198,7 +203,8 @@ int findCurrentPlace( int current, int * availableCurrents ) {
 	return(i);
 }
 
-void readin(vector <double> *data_x, vector <double> *data_y, vector <double> *data_xerr, vector <double> *data_yerr, int * availableCurrents, const char * txt) {
+//Read in data from results of FitGaussDistribution.cc and set errors on the data
+void readin(vector <double> *data_x, vector <double> *data_y, vector <double> *data_xerr, vector <double> *data_yerr, int * availableCurrents, const char * txt, bool MoReWeb) {
 	
 	char linecont[500];
 	fstream fc;
@@ -224,8 +230,13 @@ void readin(vector <double> *data_x, vector <double> *data_y, vector <double> *d
 		//cout << data_x[i][0] << " ";
 		fc >> xerror >> expectation;
 		//data_xerr[i].push_back(xerror);
-		data_xerr[i].push_back(1.2);
-		//cout << measurement << " " << expectation << endl;
+		if(MoReWeb == true) {
+			data_xerr[i].push_back(1.2);
+		}
+		else {
+			data_xerr[i].push_back(1.5);
+		}
+		//~ //cout << measurement << " " << expectation << endl;
 		data_y[i].push_back(expectation);
 		yerror = erroronElectrons(actualSource);
 		data_yerr[i].push_back(yerror);
@@ -233,6 +244,7 @@ void readin(vector <double> *data_x, vector <double> *data_y, vector <double> *d
 	}
 }
 
+//Plot data with x and y error bars and perform a linear fit
 void PlotGraph(vector <double> *data_x, vector <double> *data_y, vector <double> *data_xerr, vector <double> *data_yerr, const int n, int * availableCurrents, TString legtitle, TString outputtxt, TString outputpdf, int chipnr) {
 	
 	
@@ -247,7 +259,9 @@ void PlotGraph(vector <double> *data_x, vector <double> *data_y, vector <double>
 	TF1 *p1fit;
 	fstream fc,df;  
 	
-	TLegend *leg = new TLegend(0.53,0.12,0.9,0.5);
+	TLegend *leg = new TLegend(0.15,0.47,0.52,0.89);
+	//x: 0.53 - 0.9
+	//y: 0.12 - 0.5
 	leg->SetFillStyle(1001);
 	leg->SetFillColor(0);
 	leg->SetTextSize(0.04);
@@ -273,8 +287,8 @@ void PlotGraph(vector <double> *data_x, vector <double> *data_y, vector <double>
 		//cout << legtitle << endl;
 		leg->SetHeader(legtitle);
 	}
-	xtitle = "signal ( Vcal DAC )";
-	ytitle = "charge ( e^{-} )";
+	xtitle = "Q (Vcal)";
+	ytitle = "n_{e^{-}}";
 	
 	
 	TCanvas *c1 = new TCanvas("c1","PlotGraph",10,10,1500,1000); 
@@ -282,6 +296,7 @@ void PlotGraph(vector <double> *data_x, vector <double> *data_y, vector <double>
 	c1->SetFillColor(0);
 	c1->SetBorderMode(0);
 	c1->SetLeftMargin(0.12);
+	c1->SetGrid();
 	
 	for(int i = 0; i < n; i++) {
 		n_size[i] = data_x[i].size();
@@ -298,7 +313,7 @@ void PlotGraph(vector <double> *data_x, vector <double> *data_y, vector <double>
 				graph[i]->SetMarkerColor(i+1);
 			}
 		    graph[i]->SetMarkerStyle(20+i);
-		    graph[i]->SetMarkerSize(0.75);
+		    graph[i]->SetMarkerSize(1.5);
 		    //graph[i]->SetLineWidth(1);
 		    //graph[i]->Draw("ALP");
 		    legentry[i] = Form("%i mA", availableCurrents[i]);
@@ -372,17 +387,18 @@ void PlotGraph(vector <double> *data_x, vector <double> *data_y, vector <double>
 		    
 		    cout << " adding graph[" << i <<"]" << endl; 
 		    multi->Add(graph[i]);		    	    
-			legentry[i].Append(Form("; p1=%4.1f e^{-}/Vcal",p1[i])); 	//http://www.cplusplus.com/reference/cstdio/printf/
+			legentry[i].Append(Form("; p1 = %4.1f e^{-}/Vcal",p1[i])); 	//http://www.cplusplus.com/reference/cstdio/printf/
 			leg->AddEntry(graph[i],legentry[i],"LP");
 		    
 		    multi->Draw("AP");
 			multi->GetXaxis()->SetTitleOffset(0.75);
-			multi->GetXaxis()->SetTitleSize(0.06);
+			multi->GetXaxis()->SetTitleSize(0.05);
 			multi->GetXaxis()->SetTitle(xtitle);
 			
-			multi->GetYaxis()->SetTitleOffset(1.0);
-			multi->GetYaxis()->SetTitleSize(0.06);
+			multi->GetYaxis()->SetTitleOffset(0.77);
+			multi->GetYaxis()->SetTitleSize(0.05);
 			multi->GetYaxis()->SetTitle(ytitle);
+			multi->GetYaxis()->SetRangeUser(1800, 11900);
 			//leg->Draw();
 		}
 	}

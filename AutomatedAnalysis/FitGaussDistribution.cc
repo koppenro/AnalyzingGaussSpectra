@@ -31,13 +31,6 @@ double ChiSquare(TH1* histo, TF1*Fit, double leftborder, double rightborder);
 
 int main( int argc, char *argv[] ){
 	
-	//Possible ways to execute: ./FitGaussDistribution (temp is "p20" as standard) or ./FitGaussDistribution $temp or ./FitGaussDistribution $temp $searchOption (e.g. ./FitGaussDistribution p20 Nd -> analyzing all Files including Nd) or 
-	// ./FitGaussDistribution $temp $searchOption $mean $fitBorder (e.g. ./FitGaussDistribution p20 Nd 240 20)
-	//First argument: temp (e.g. p20, p10, p0, m10, m20)
-	//Second argument: Filter condition for analyzing FileNames
-	//Third argument: Mean of peak (int)
-	//Fourth argument: Fit Border x as mean +- fitBorder (int)
-	
 	//DEFINITION OF OPTIONS
 	const char * temp;
 	temp = new char[5];
@@ -118,6 +111,7 @@ int main( int argc, char *argv[] ){
 	gPad->SetBottomMargin(0.17);
 	c2->SetFillColor(0);
 	c2->SetBorderMode(0);
+	c2->SetGrid(); 
 	
 	//READ IN HISTOGRAMS AND FIT
 	TH1 * histo;
@@ -244,6 +238,8 @@ double ChiSquare(TH1* histo, TF1* Fit, double leftborder, double rightborder) {
 	return(2.0);
 }
 
+//--------------------------------------------------------------------------------------------------------------------
+//Produce TString of .root filenames in directory datadir which include searchOption in the filename
 TString * listofRootFiles(DIR *datadir, int * n, const char * searchOption) {
     struct dirent *entry;
     TString * RootFiles;
@@ -269,6 +265,7 @@ TString * listofRootFiles(DIR *datadir, int * n, const char * searchOption) {
 }
 
 //--------------------------------------------------------------------------------------------------------------------
+//Find source out of filename and return source as TString
 TString * identifySource(TString RootFile, TString * Sources, const int * numbersources) {
 //	for(int i = 0; i < *numbersources; i++) {
 //		Sources[i].Insert(0, "_");	//Insert at the beginning of the sources an underscore
@@ -293,11 +290,12 @@ TString * identifySource(TString RootFile, TString * Sources, const int * number
 //		Sources[i].Remove(0, 1);	//delete underscore in front of Sources[j]
 //	}
 	Source[0] = Sources[j];
-	Source[0].Remove(0,1);
+	Source[0].Remove(0,1);		//Remove "p or m" in front of e.g. "p20"
 	return Source;
 }
 
 //--------------------------------------------------------------------------------------------------------------------
+//Find current out of filename and return current as int
 int identifyCurrent(TString RootFile, TString * CurrentString, int * Currents , int numbercurrents) {
 	int j = 0;
 	while (j < numbercurrents) {		//search for Current
@@ -327,19 +325,21 @@ TF1 *MoReWebAlgorithm(TString rootfile, TString Source, int actualCurrent, doubl
 	fr->Cd("Xray");
 	double maxpeak, maxpeakerror; 
 	
+	
+	//------------------ Open Xray Spectrum --------------------
 	Char_t *histoname = Form("q_%s_C%i_V0",Source.Data(), chipnr);	//Build name of histogram with Source and chip number
 	cout << histoname << endl;
 
 	gDirectory->GetObject(histoname, hDummy);
 	if (hDummy != 0) {
 		histo = (TH1*)hDummy->Clone("histo");
-		//histo->SetDirectory(0);
-		//histo->Draw("colz");
 		histo->GetYaxis()->SetTitleOffset(1.3);
 		histo->GetYaxis()->SetTitleSize(0.05);
-		histo->GetYaxis()->SetTitle("# Events");
+		//histo->GetYaxis()->SetTitle("# Events");
+		histo->GetYaxis()->SetTitle("Anzahl an Eintraegen");
 		histo->GetXaxis()->SetTitleSize(0.05);
 		histo->GetXaxis()->SetTitle("Q (Vcal)");
+		histo->SetTitle("");
 	}
 	else {
 		cout << "Histogrammname ueberpruefen" << endl;
@@ -347,14 +347,12 @@ TF1 *MoReWebAlgorithm(TString rootfile, TString Source, int actualCurrent, doubl
 	
 	//zooming the x-axis
 	TAxis *axis = histo->GetXaxis();
-	//   axis->SetRangeUser(50,220);  
-	//   axis->SetRangeUser(50,350);  
 	axis->SetRangeUser(0,350);
 	if(strstr(Source.Data(), "Nd") != NULL) {
-	    axis->SetRangeUser(150,350);
+	    axis->SetRangeUser(150,350);		//Improve fit results for Neodymium peak through neglection iron peak at lower energies
 	}
-	//const char * comment;
-	//comment = new char[500];
+	
+	//------------------------- Start MoReWeb Algorithm --------------------------
 	//First Gaussian fit around the expectation
 	double xmin = histo->GetBinLowEdge(1);
 	double xmax = histo->GetBinLowEdge(histo->GetNbinsX());
@@ -463,11 +461,7 @@ TF1 *MoReWebAlgorithm(TString rootfile, TString Source, int actualCurrent, doubl
 	myfit->SetLineColor(kBlue);	
 
 	histo->Fit(myfit, "");
-	histo->GetXaxis()->SetRange(0, peak+120);
-	//TF1 * myfunc = histo->GetFunction("myfit");
-	cout << "Chi Quadrat " << myfit->GetChisquare()/myfit->GetNDF() << endl;
-	cout << myfit->GetNDF() << endl;
-	cout << "Chi Quadrat 2 " << histo->Chisquare(myfit)/myfit->GetNDF() << endl;
+	histo->GetXaxis()->SetRange(0, peak+120);		//Change the x axis range for plots
 	
 	TF1 * backgroundFit = new TF1(name, "([0]+[1]*x+gaus(2))*(1+TMath::Erf((x-[5])/[6]))/2", xmin, xmax);
 	backgroundFit->FixParameter(0, myfit->GetParameter(0));
@@ -483,9 +477,9 @@ TF1 *MoReWebAlgorithm(TString rootfile, TString Source, int actualCurrent, doubl
 	
 	histo->SetStats(0);
 	histo->SetLineColor(1);
-	histo->Draw();			
+	histo->Draw();
 	
-	
+	//------------------ Save results in .txt File and in .root File -----------------------
 	intdir = chdir("../results/");
 	Char_t *outputtitle = Form("C%i-Analysis-MoReWebFit.txt", chipnr);
 	//outputtitle = new char[250];
@@ -541,10 +535,8 @@ TF1 *MoReWebAlgorithm(TString rootfile, TString Source, int actualCurrent, doubl
 }
 
 //--------------------------------------------------------------------------------------------------------------------
-
+//Perform a single Gaussian Fit, used to generate start parameters for MoReWeb Fit
 TF1 * FitGaus(TH1 * histo, double initguess, double xmin, double xmax) {
-	
-	cout << "xmax " << xmax << endl;
 	
 	TF1 * fit = new TF1("gausFit", "gaus(0)", xmin, xmax);
 	fit->SetLineColor(4);
@@ -594,7 +586,8 @@ TH1 *getTH1(TString rootfile, TString Source, int actualCurrent, double peak, do
 	const char * GETCWD;
 	GETCWD = getcwd(pfad, 256);
 	if(GETCWD == NULL) {}
-	//cout << pfad << endl;
+	
+	//---------------------- Open histogramm ---------------------------
 	TFile *fr = new TFile(rootfile);
 	TH1 *histo, *hDummy;
 	fr->Cd("Xray");
@@ -611,9 +604,11 @@ TH1 *getTH1(TString rootfile, TString Source, int actualCurrent, double peak, do
 		//histo->Draw("colz");
 		histo->GetYaxis()->SetTitleOffset(1.3);
 		histo->GetYaxis()->SetTitleSize(0.05);
-		histo->GetYaxis()->SetTitle("# Events");
+		//histo->GetYaxis()->SetTitle("# Events");
+		histo->GetYaxis()->SetTitle("Anzahl an Eintraegen");
 		histo->GetXaxis()->SetTitleSize(0.05);
 		histo->GetXaxis()->SetTitle("Q (Vcal)");
+		histo->SetTitle("");
 	
 		//zooming the x-axis
 		TAxis *axis = histo->GetXaxis();
@@ -622,7 +617,7 @@ TH1 *getTH1(TString rootfile, TString Source, int actualCurrent, double peak, do
 		//	 axis->SetRangeUser(140,180);  	
 		axis->SetRangeUser(0,peak+120);
 		
-		
+		//------------------- Start Gaussian fit ----------------------
 		const char * comment;
 		comment = new char[500];
 		comment = " ";
@@ -631,7 +626,6 @@ TH1 *getTH1(TString rootfile, TString Source, int actualCurrent, double peak, do
 		}
 		int maxbin = histo->GetMaximumBin();
 		if(strstr(Source.Data(), "Nd") != NULL) {
-			//cout << "MAXBIN " << maxbin << endl << endl << endl;
 			axis->SetRangeUser(0,peak+120);
 		}
 		//~ if(maxbin > peak - 25 and maxbin < peak + 25) {
@@ -654,19 +648,16 @@ TH1 *getTH1(TString rootfile, TString Source, int actualCurrent, double peak, do
 		Fit->SetLineWidth(1);
 		Fit->SetLineStyle(1);
 		gStyle->SetOptFit(111111); 
-		maxpeak = Fit->GetParameter(1); 						//Mean
-		maxpeakerror = Fit->GetParError(1);						//Error on mean
-		nrEntries = histo->GetEntries();						//Number of entries
-		nrTrigger = nrTriggers(rootfile, Source);				//Number of triggers
+		maxpeak = Fit->GetParameter(1); 					//Mean
+		maxpeakerror = Fit->GetParError(1);					//Error on mean
+		nrEntries = histo->GetEntries();					//Number of entries
+		nrTrigger = nrTriggers(rootfile, Source);			//Number of triggers
 		double lit = findsourcelit(Source);					//Expected number of electrons (NIST)
 		double rate = calculateRate(nrEntries, nrTrigger, chipnr);		//Calculated rate: Rate = Hits / Trigger / 25 ns / 0,6561 cm² with zero masked pixels
 		
+		//---------------------- Save results --------------------------------
 		intdir = chdir("../results/");
-		//const char * outputtitle;
-		//outputtitle = new char[250];
 		Char_t *outputtitle = Form("C%i-Analysis-GaussFit.txt", chipnr);
-		//	char outputtitle[250];
-		//outputtitle = "Analysis-GaussFit.txt";
 		//~ //Save data in .txt
 		std::ifstream FileTest(outputtitle);
 		if(!FileTest) {
@@ -675,7 +666,7 @@ TH1 *getTH1(TString rootfile, TString Source, int actualCurrent, double peak, do
 			outputfile.open(outputtitle, ios::out);
 			outputfile << "//Output from main.cc, Automatisierte Spektrenauswertung fuer chip ";
 			outputfile << chipnr << " \n";
-			outputfile << "//Source\tTemperature\t Current (mA)\tPeak (Vcal)\tErrorPeak (Vcal)\t#electrons(expected)\tLeftFitBorder\tRightFitBorder\t#Events\t#Triggers\tRate (Hz/cm^3)\tFile\tComment\n";
+			outputfile << "//Source\tTemperature\t Current (mA)\tPeak (Vcal)\tErrorPeak (Vcal)\t#electrons(expected)\tLeftFitBorder\tRightFitBorder\t#Events\t#Triggers\tRate (Hz/cm^2)\tFile\tComment\n";
 			outputfile.close();
 		}
 		else{
@@ -705,14 +696,6 @@ TH1 *getTH1(TString rootfile, TString Source, int actualCurrent, double peak, do
 		Fit->Write(outputfit);
 		savehisto->Close();
 		savehisto->Delete();
-		
-		//~ cout << "Single Gaussian Chi Quadrat " << endl;
-		//~ cout << "Chi Quadrat " << Fit->GetChisquare()/Fit->GetNDF() << endl;
-		//~ cout << Fit->GetNDF() << endl;
-		//~ cout << "Chi Quadrat 2 " << histo->Chisquare(Fit)/Fit->GetNDF() << endl;
-		
-		
-		//intdir = chdir("../out");
 	}
 	else { 
 		cout << "Histogrammname ueberpruefen" << endl;
@@ -726,15 +709,13 @@ TH1 *getTH1(TString rootfile, TString Source, int actualCurrent, double peak, do
 }
 
 //--------------------------------------------------------------------------------------------------------------------
+//Find initial guess for peak positions of used sources out of .txt file or from hard coded values
 double * defaultPeakPosition(TString Source, int fitBorder) {
 	
 	const char * GETCWD;
 	char pfad[256];
 	GETCWD = getcwd(pfad, 256);
 	if(GETCWD == NULL) {}
-	
-	//cout << "----------------------------------------------------------------------------------------------------------------------------" << endl;
-	//cout << "Pfad defaultPeakPosition " << pfad << endl << endl;
 	
 	double * defaultParameter;
 	defaultParameter = new double[3];	//[0] = position of peak, [1] = left fit border, [2] = right fit border
@@ -804,6 +785,7 @@ double * defaultPeakPosition(TString Source, int fitBorder) {
 }
 
 //--------------------------------------------------------------------------------------------------------------------
+//Find number of triggers out of .root file of the spectrum
 int nrTriggers(TString rootfile, TString Source) {
 	TFile *fr = new TFile(rootfile);
 	int nrTrigger = 0;
@@ -822,6 +804,7 @@ int nrTriggers(TString rootfile, TString Source) {
 }
 
 //--------------------------------------------------------------------------------------------------------------------
+//Return expected value of electrons in a silcon sensor produced through K-alpha photons, data from NIST
 double findsourcelit(TString Source) {
 	if(strstr(Source, "Ag") != NULL) return(22162.99/3.6);
 	if(strstr(Source, "Zn") != NULL) return(8639.10/3.6);
@@ -835,6 +818,7 @@ double findsourcelit(TString Source) {
 }	
 
 //--------------------------------------------------------------------------------------------------------------------
+//Delete Lines including the name of actual file
 void deleteLinesTxt(const char * outputtitle, TString rootfile) {
 	
 	fstream fin, fout;
@@ -862,6 +846,7 @@ void deleteLinesTxt(const char * outputtitle, TString rootfile) {
 }
 
 //--------------------------------------------------------------------------------------------------------------------
+//Returns pixelSurface of pixel in $col and $row on a ROC
 double pixelSurface(char * keyword, int col, int row) {
 	
 	double pxSURFACEcm3;
@@ -893,6 +878,7 @@ double pixelSurface(char * keyword, int col, int row) {
 }
 
 //--------------------------------------------------------------------------------------------------------------------
+//Calculate rate of Xray radiation
 double calculateRate(int nrEntries, int nrTrigger, int chipnr) {
 	
 	fstream fin;

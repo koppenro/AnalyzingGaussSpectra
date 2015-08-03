@@ -15,13 +15,13 @@ GLIBS		= $(ROOTGLIBS)
 
 #########################
 
-all: FitGaussDistribution
+all: HistoCalibrationSlopes
 
-FitGaussDistribution.o : FitGaussDistribution.cc
-	$(CC) $(CCFLAGS) -c FitGaussDistribution.cc -o FitGaussDistribution.o
+HistoCalibrationSlopes.o : HistoCalibrationSlopes.cc
+	$(CC) $(CCFLAGS) -c HistoCalibrationSlopes.cc -o HistoCalibrationSlopes.o
 
-FitGaussDistribution : FitGaussDistribution.o
-	$(LD) FitGaussDistribution.o $(LDFLAGS) $(GLIBS) -o FitGaussDistribution
+HistoCalibrationSlopes : HistoCalibrationSlopes.o
+	$(LD) HistoCalibrationSlopes.o $(LDFLAGS) $(GLIBS) -o HistoCalibrationSlopes
 
 clean:
 	rm *.o

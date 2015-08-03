@@ -1,0 +1,10 @@
+**MakeTxt**
+=====================================
+**Documentation**
+
+This documentation gives a short description of the functionality of the program "MakeTxt.cc".
+For details please take a look in the code. 
+
+The program copies the slopes of energy calibration lines from several modules in a single file which can be analyzed by e.g. "HistoCalibrationSlopes.cc". 
+The directory, where the data of the modules is saved, has to be given in the file "MakeTxt-Config.config". 
+The output files are named "Slopes-CalibrationLines-SingleGauss.txt" and "Slopes-CalibrationLines-MoReWeb.txt". 

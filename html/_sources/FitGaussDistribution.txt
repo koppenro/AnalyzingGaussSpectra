@@ -1,0 +1,142 @@
+**FitGaussDistribution**
+=====================================
+**Documentation**
+
+This documentation gives a short description of the functionality of the program "FitGaussDistribution.cc".
+For details please take a look in the code. 
+
+This program fits a Single Gaussian function and the function used by MoReWeb to Xray spectra saved in the subdirectory "out". 
+Options are:
+   * -temp $temperature: set temperature to $temperature, standard is "p20"
+   * -m: Xray spectra are measured with a module (spectra from all ROCs will be analyzed)
+   * -roc $ROCnumber: only spectra from ROC $ROCnumber will be analyzed
+   * -T $TrimValue: set trim value to $TrimValue in Vcal units, standard is "35"
+   * -s $searchOption: only histograms with $searchOption in the file name will be analyzed
+   * -fb $fitBorder: set borders of symmetrical fit intervall manually
+   * -fp $PeakPosition: set peak position manually
+   * -fm: perform Gaussian fit around the maximum bin of the histogram
+   * -c $currentBegin $currentEnd $currentStep: set all used currents, which can be found in the file names. 
+   * -nc: no current specification in file name is used
+
+In the main program, the sources are defined and the functions are called to perform both fits (MoReWeb and SingleGauss). 
+For further information, please take a look in the .cc code. 
+
+.. toctree::
+   :maxdepth: 2
+
+.. function:: MoReWebAlgorithm(Rootfile, Source, Current, Peak, Temperature, ChipNr, module)
+
+   Use the MoReWebAlgorithm to fit a function to a Xray spectrum and save results
+   
+   :param Rootfile: Xray spectrum (.root) which has to be analyzed
+   :param Source: Used Source in Xray spectrum
+   :param Current: Used Xray Current
+   :param Peak: initial guess for the peak position
+   :param Temperature: used temperature (e.g p20)
+   :param ChipNr: number of ROC which has to be analyzed 
+   :param module: bool, which indicates if a module is analyzed or a single chip
+
+   * Open *Rootfile* and find the Spectrum "q_$Source_C$ChipNr_V0" in the Subdirectory "Xray"
+   * Perform MoReWeb Algorithm: background fit and Gaussian fit for the whole spectrum (Algorithm see in .cc File)
+   * Draw results in already opened TCanvas (to save the drawing, open the TCanvas before using the function and save pictures afterwards)
+   * Save data in .txt file and .root file
+   :return: myfit (TF1 function)
+	
+.. function:: FitGaus(Histo, initguess, xmin, xmax)
+
+   Fit a Single Gaussian to a histogram
+
+   :param Histo: TH1 object, histogramm in which a Gaussian fit has to be done
+   :param initguess: inital guess about the peak position, if choosen negative, the mean of the histogramm is used
+   :param xmin: left fit border: is choosen as $initguess-40 if $initguess > 0 and is left xmin if initguess < 0
+   :param xmax: right fit border: is  choosen as $initguess+40 if $initguess > 0 and is left xmax if initguess < 0
+
+   * choose fit border and initguess as described above
+   * perform a Gaussian fit with sigma of circa 10
+   :return: fit (TF1 function)
+
+.. function:: getTH1(Rootfile, Source, Current, Peak, Leftborder, Rightborder, fitBorder, Temperature, ChipNr, module, maxbinbool)
+
+   Fit a Single Gaussian to a Xray spectrum and save results
+
+   :param Rootfile: Xray spectrum (.root) which has to be analyzed
+   :param Source: Used Source in Xray spectrum
+   :param Current: Used Xray current
+   :param Peak: inital guess for the peak position
+   :param leftborder
+
+   * Open $Rootfile and find the Spectrum "q_$Source_C$ChipNr_V0" in the Subdirectory "Xray"
+   * Perform Single Gaussian fit: 
+      *around maximum bin in histogramm, if $maxbinbool is true, borders are choosen $maxbin-$fitBorder and $maxbin+$fitBorder
+      *around $Peak with borders $leftborder and $rightborder
+   * Save data in .txt file and .root file
+   :return: histo (TH1 histogram)
+
+.. function:: listofRootFiles(datadir, n, searchOption)
+
+   Find all .root files in the directory $datadir which include $searchOption in the file name and return a TString with the file names
+
+   :return: RootFiles (TString)
+
+.. function:: identifySource(Rootfile, Sources, numbersources)
+
+   Find the used source of Xray spectrum out of filename and return source
+
+   :param Rootfile: filename
+   :param Sources: String of all available sources
+   :param numbersources: number of available sources
+
+   :return: Source (TString)
+
+.. function:: identifyCurrent(Rootfile, CurrentString, Currents, numbercurrents)
+
+   Find the used current of Xray tube out of filename and return value
+
+   :param Rootfile: filename
+   :param CurrentString: String of all used currents
+   :param numbercurrents: number of available currents
+
+   :return: current (int)
+
+.. function:: defaultPeakPosition(Source, fitBorder)
+
+   Find inital guess for peak positions of used sources out of .txt file or from hard coded values
+
+   :param Source: peak position of this source is determined
+   :param fitBorder: if no .txt file exists, fitBorders for e.g. Gaussian fit are calculated in the symmetrical interval $defaultposition-$fitBorder, $defaultposition+$fitBorder
+
+   :return: defaultParameter (double array)
+
+.. function:: nrTriggers(Rootfile, Source)
+
+   Read in number of triggers out of Xray spectrum
+
+   :return: nrTrigger (int)
+
+.. function:: findsourcelit(Source)
+
+   Return expected number of electrons which are produced in a silicon sensor through K-alpha-Photons. Data from NIST
+
+   :return: nrElectrons (double)
+
+.. function:: deleteLinesTxt(outputtitle, rootfile)
+
+   Delete lines in txt file $outputtitle, which include $rootfile. Multiple analysis of the same root file can be done and only the last result is saved in txt file.
+
+   :return: void
+
+.. function:: pixelSurface(keyword, col, row) 
+
+   Returns pixelSurface of pixel in $col, $row on a ROC. Function can be used to read in lines from defaultMaskfile.dat, input in $keyword
+
+   :return: pixelSurfacecm3 (double)
+
+.. function:: calculateRate(nrEntries, nrTrigger, chipnr)
+
+   Calculate rate of Xray radiation on the sensor. 
+
+   :param nrEntries: number of entries in Xray spectrum
+   :param nrTrigger: number of triggers
+   :param chipnr: number of ROC
+
+   :return: rate (double)

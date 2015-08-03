@@ -1,0 +1,23 @@
+**currentMeasurement-XrayTube.py**
+=====================================
+**Documentation**
+
+This documentation gives a short description of the additional used functions in the program "currentMeasurement-XrayTube.py" compared to "XrayTube-commands.py"
+
+.. toctree::
+   :maxdepth: 2
+
+.. function:: runXraytest(pXardir, datadirectory, ac, runnr, trimVcal)
+   
+   Run pXar software to measure a Xray Spectrum in Xray Test and save in measurements a ".root" file
+   
+   Global variables can be choosen at the beginning of the program. 
+   
+   :param pXardir: directory, where pXar version is installed, e.g. ("/home/readout/psiexpert/pxar")
+   :param datadirectory: directory, where the the configuration files from the fulltest are saved and the measurements will be saved ("~/pXar_output/...")
+   :param ac: actual Current of the Xray tube (saved in the file name)
+   :param runnr: number of run (saved in the file name)
+   :param trimVcal: Vcal value at which the single chip assembly is trimmed to (e.g. 35)
+   :return: void
+	
+

@@ -1,0 +1,55 @@
+**CurrentDependency**
+=====================================
+**Documentation**
+
+This documentation gives a short description of the functionality of the program "CurrentDependency.cc".
+For details please take a look in the code. 
+
+This program plots the peak positions of Xray spectra against the used currents of the Xray tube.
+The outputfiles from FitGaussDistribution.cc are saved in the subdirectory "results" 
+Options are:
+   * -temp $temperature: set temperature to $temperature, standard is "p20"
+   * -m: Xray spectra are measured with a module (results from all ROCs will be analyzed)
+   * -roc $ROCnumber: only results from ROC $ROCnumber will be analyzed
+   * -l $legendtitle: set legendtitle, standard is empty
+
+In the main program a linear fit is done and the slopes are saved. Results are saved as .png, .pdf and .txt
+
+.. toctree::
+   :maxdepth: 2
+
+.. function:: findTargetPlace(current, availableCurrents)
+
+   Return a characteristic integer for each target used in the Xray spectra to fill the data at the right position in an array
+   
+   :param current: Used source in the xray spectrum
+   :param availableCurrents: TString of all used Currents
+   :return: i (int)
+	
+.. function:: readin(data_x, data_y, availableTargets, txt)
+
+   Read in data from files produced by FitGaussDistribution.cc.
+
+   :param data_x: array for currents
+   :param data_y: array for peak positions
+   :param availableTargets: all used targets in the spectra
+   :param txt: name of outputfile from FitGaussDistribution.cc
+   :return: void
+
+.. function:: PlotGraph(data_x, data_y, n , availableTargets, legtitle, outputtxt, ylimitup, ylimitdown, outputpdf)
+
+   Plot the peak positions against the currents. 
+   Perform a linear fit. 
+   Results saved as .txt, .png and .pdf
+
+   :param data_x: array for currents
+   :param data_y: array for peak positions
+   :param n: number of different targets
+   :param availableTargets: array of used targets
+   :param legtitle: title of legend
+   :param outputtxt: title of outputfile in which the slopes are saved
+   :param ylimitup: maximum of y axis scale
+   :param ylimitdown: minimum of y axis scale
+   :param outputpdf: title of outputfile .pdf
+   
+   :return: void

@@ -105,7 +105,7 @@ int main( int argc, char *argv[] ){
 	
 	
 	for(; chipnr < nrchips; chipnr++) {
-		legtitle.Append(Form(" - C%i", chipnr));
+		legtitle.Append(Form(" - Auslesechip %i", chipnr));
 		datafile = Form("results/C%i-Analysis-GaussFit.txt", chipnr);
 		//datafile = "results/Analysis-GaussFit.txt";
 		readin(data_x, data_y, availableTargets, datafile);
@@ -209,10 +209,10 @@ void PlotGraph(vector <double> *data_x, vector <double> *data_y, const int n, TS
 	TF1 *p1fit;
 	fstream fc,df;  
 	
-	TLegend *leg = new TLegend(0.1,0.1,0.9,0.9);
-	leg->SetFillStyle(1001);
-	leg->SetFillColor(0);
-	leg->SetTextSize(0.04);
+	TLegend *leg = new TLegend(0.01,0.1,0.99,0.6);
+	//leg->SetFillStyle(1001);
+	//leg->SetFillColor(0);
+	leg->SetTextSize(0.07);
 	
 	// --------------------------------
 	// init variables
@@ -336,12 +336,12 @@ void PlotGraph(vector <double> *data_x, vector <double> *data_y, const int n, TS
 		    multi->SetMaximum(ylimitup);	//Set upper y Axis limit
 		    multi->SetMinimum(ylimitdown);	//Set lower y Axis limit
 		    multi->Draw("AP");
-			multi->GetXaxis()->SetTitleOffset(0.75);
-			multi->GetXaxis()->SetTitleSize(0.06);
+			multi->GetXaxis()->SetTitleOffset(0.95);
+			multi->GetXaxis()->SetTitleSize(0.05);
 			multi->GetXaxis()->SetTitle(xtitle);
 			
-			multi->GetYaxis()->SetTitleOffset(1.0);
-			multi->GetYaxis()->SetTitleSize(0.06);
+			multi->GetYaxis()->SetTitleOffset(1.1);
+			multi->GetYaxis()->SetTitleSize(0.05);
 			multi->GetYaxis()->SetTitle(ytitle);
 			//leg->Draw();
 		}
@@ -364,10 +364,11 @@ void PlotGraph(vector <double> *data_x, vector <double> *data_y, const int n, TS
 	TVirtualPad *pad2 = new TPad();
 	pad1 = c1->GetPad(1);
 	pad2 = c1->GetPad(2);
-	pad1->SetPad(0,0,0.75,1);
-	pad2->SetPad(0.7,0,1,1);
+	pad1->SetPad(0,0,0.7,1);
+	pad2->SetPad(0.65,0,1,1);
 	c1->cd(1);
 	pad1->SetLeftMargin(0.14);
+	pad1->SetGrid();
 	multi->Draw("AP");
 	c1->cd(2);	
 	leg->Draw();

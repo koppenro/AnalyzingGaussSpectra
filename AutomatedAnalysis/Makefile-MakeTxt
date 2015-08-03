@@ -15,13 +15,13 @@ GLIBS		= $(ROOTGLIBS)
 
 #########################
 
-all: FitGaussDistribution
+all: MakeTxt
 
-FitGaussDistribution.o : FitGaussDistribution.cc
-	$(CC) $(CCFLAGS) -c FitGaussDistribution.cc -o FitGaussDistribution.o
+MakeTxt.o : MakeTxt.cc
+	$(CC) $(CCFLAGS) -c MakeTxt.cc -o MakeTxt.o
 
-FitGaussDistribution : FitGaussDistribution.o
-	$(LD) FitGaussDistribution.o $(LDFLAGS) $(GLIBS) -o FitGaussDistribution
+MakeTxt : MakeTxt.o
+	$(LD) MakeTxt.o $(LDFLAGS) $(GLIBS) -o MakeTxt
 
 clean:
 	rm *.o

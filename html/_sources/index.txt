@@ -20,3 +20,4 @@ CurrentDependency.cc plots the peak positions against the used currents of the X
    CurrentDependency
    MakeTxt
    HistoCalibrationSlopes
+   AnalyseModule

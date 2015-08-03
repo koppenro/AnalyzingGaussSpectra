@@ -1,0 +1,7 @@
+**AnalyseModule.sh**
+=====================================
+**Documentation**
+
+This documentation gives a short description of the functionality of the program "AnalyseModule.sh".
+
+AnalyseModule.sh is a shell script which calls the functions "FitGaussDistribution", "CalibrationLine" and "CurrentDependency" to analyse the measured data from a module. 
